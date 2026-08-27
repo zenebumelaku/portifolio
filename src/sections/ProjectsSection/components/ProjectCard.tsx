@@ -15,7 +15,7 @@ export type ProjectCardProps = {
 
 export const ProjectCard = (props: ProjectCardProps) => {
   return (
-    <article className="group overflow-hidden rounded-2xl border border-neutral-200 bg-white transition hover:-translate-y-1 hover:border-neutral-300 hover:shadow-xl">
+    <article className="group overflow-hidden rounded-2xl border-2 border-black bg-white transition hover:-translate-y-1 hover:shadow-xl">
       <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100">
         {props.mediaType === "image" && props.mediaSrc ? (
           <img
