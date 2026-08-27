@@ -19,7 +19,7 @@ export const ContactForm = () => {
   return (
     <form
       onSubmit={submit}
-      className="rounded-2xl bg-white p-6 shadow-sm md:p-8"
+      className="mx-auto w-full max-w-3xl rounded-2xl bg-white p-6 shadow-sm md:p-8"
     >
       <div className="grid gap-5">
         <label className="grid gap-2 text-sm font-medium">

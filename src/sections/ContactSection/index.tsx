@@ -60,7 +60,7 @@ export const ContactSection = () => {
               title="Telegram channel"
               value="@zenicore"
             />
-            <div className="flex items-center gap-4 rounded-xl border-2 border-black bg-neutral-50 p-4 sm:col-span-2 lg:col-span-2">
+            <div className="flex items-center gap-4 rounded-xl border-2 border-black bg-neutral-50 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-700">
                 <MapPin size={18} />
               </div>
