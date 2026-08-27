@@ -1,4 +1,5 @@
 import { ExternalLink, Github } from "lucide-react";
+import { motion } from "framer-motion";
 
 export type ProjectCardProps = {
   mediaType: "image" | "video" | "placeholder";
@@ -15,7 +16,14 @@ export type ProjectCardProps = {
 
 export const ProjectCard = (props: ProjectCardProps) => {
   return (
-    <article className="group overflow-hidden rounded-2xl border-2 border-black bg-white transition hover:-translate-y-1 hover:shadow-xl">
+    <motion.article
+      className="group overflow-hidden rounded-2xl border-2 border-black bg-white transition hover:shadow-xl"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.15 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      whileHover={{ y: -4 }}
+    >
       <div className="relative aspect-[16/10] overflow-hidden bg-neutral-100">
         {props.mediaType === "image" && props.mediaSrc ? (
           <img
@@ -102,6 +110,6 @@ export const ProjectCard = (props: ProjectCardProps) => {
           )}
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 };

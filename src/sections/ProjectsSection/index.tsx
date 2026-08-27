@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ProjectCardProps } from "@/sections/ProjectsSection/components/ProjectCard";
 import { ProjectFilter } from "@/sections/ProjectsSection/components/ProjectFilter";
 import { ProjectGrid } from "@/sections/ProjectsSection/components/ProjectGrid";
+import { motion } from "framer-motion";
 
 const projects: ProjectCardProps[] = [
   {
@@ -115,7 +116,13 @@ export const ProjectsSection = () => {
 
   return (
     <section id="projects" className="site-section border-t border-neutral-100">
-      <div className="section-inner">
+      <motion.div
+        className="section-inner"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.65, ease: "easeOut" }}
+      >
         <p className="eyebrow">Selected work</p>
         <h2 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
           Projects
@@ -150,7 +157,7 @@ export const ProjectsSection = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };

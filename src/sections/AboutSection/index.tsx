@@ -1,7 +1,15 @@
+import { motion } from "framer-motion";
+
 export const AboutSection = () => {
   return (
     <section id="about" className="site-section">
-      <div className="section-inner">
+      <motion.div
+        className="section-inner"
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.65, ease: "easeOut" }}
+      >
         <div>
           <div className="p-6 md:p-8">
             <h2 className="text-5xl font-bold tracking-tight md:text-6xl">
@@ -36,7 +44,7 @@ export const AboutSection = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };

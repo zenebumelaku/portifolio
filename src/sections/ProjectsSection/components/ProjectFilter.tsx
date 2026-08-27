@@ -3,7 +3,7 @@ type ProjectFilterProps = {
   onChange: (category: string) => void;
 };
 
-const categories = ["Platform", "Full Stack", "AI", "Mobile", "Backend", "API", "Web", "Bot"];
+const categories = ["Full Stack", "Mobile", "Backend"];
 
 export const ProjectFilter = ({ active, onChange }: ProjectFilterProps) => {
   return (
