@@ -1,13 +1,8 @@
-import { AboutHighlightCard } from "@/sections/AboutSection/components/AboutHighlightCard";
-
-const icon = (label: string) =>
-  `https://dummyimage.com/96x96/f5f5f5/111827&text=${encodeURIComponent(label)}`;
-
 export const AboutSection = () => {
   return (
     <section id="about" className="site-section">
       <div className="section-inner">
-        <div className="grid gap-6">
+        <div>
           <div className="p-6 md:p-8">
             <h2 className="text-5xl font-bold tracking-tight md:text-6xl">
               About Me
@@ -39,19 +34,6 @@ export const AboutSection = () => {
                 projects, and becoming a versatile software engineer.
               </p>
             </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <AboutHighlightCard
-              iconSrc={icon("EDU")}
-              title="Education"
-              description="Software Engineering, Addis Ababa University - fourth-year student"
-            />
-            <AboutHighlightCard
-              iconSrc={icon("WORK")}
-              title="Work Focus"
-              description="Full-Stack and Flutter Mobile Developer"
-            />
           </div>
         </div>
       </div>
