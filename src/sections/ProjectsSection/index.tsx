@@ -5,6 +5,16 @@ import { ProjectGrid } from "@/sections/ProjectsSection/components/ProjectGrid";
 
 const projects: ProjectCardProps[] = [
   {
+    mediaType: "placeholder",
+    imageAlt: "Zenebu portfolio website",
+    category: "Web",
+    title: "Zenebu Portfolio",
+    description:
+      "A modern developer portfolio showcasing full-stack, mobile, and AI-focused projects, skills, experience, and contact information.",
+    skills: ["React", "TypeScript", "Tailwind CSS", "Framer Motion", "Vite"],
+    live: "https://zenivaworks.vercel.app/#skills",
+  },
+  {
     mediaType: "image",
     mediaSrc:
       "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/screens.png",
