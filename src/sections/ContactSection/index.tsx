@@ -9,15 +9,15 @@ export const ContactSection = () => {
   return (
     <section id="contact" className="site-section border-t border-neutral-100">
       <div className="section-inner">
-        <div className="mb-12">
+        <div className="mb-12 text-center">
           <p className="eyebrow">Get in touch</p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
             Contact Me
           </h2>
         </div>
 
-        <div className="grid gap-10">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto grid w-full max-w-5xl gap-12">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <ContactCard
               href="mailto:melakuzenebu3@gmail.com"
               iconSrc={icon("MAIL")}
