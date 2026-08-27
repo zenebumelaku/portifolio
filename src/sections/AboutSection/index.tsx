@@ -8,7 +8,7 @@ export const AboutSection = () => {
     <section id="about" className="site-section">
       <div className="section-inner">
         <div className="grid gap-12 lg:grid-cols-[1.15fr_.85fr] lg:gap-20">
-          <div>
+          <div className="rounded-2xl border-2 border-black p-6 md:p-8">
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
               About Me
             </h2>
