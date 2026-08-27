@@ -1,0 +1,105 @@
+import { useMemo, useState } from "react";
+import { ProjectCardProps } from "@/sections/ProjectsSection/components/ProjectCard";
+import { ProjectFilter } from "@/sections/ProjectsSection/components/ProjectFilter";
+import { ProjectGrid } from "@/sections/ProjectsSection/components/ProjectGrid";
+
+const projects: ProjectCardProps[] = [
+  {
+    mediaType: "image",
+    mediaSrc:
+      "https://github.com/user-attachments/assets/4b769f7d-5d2c-43a7-8283-07fa8402de92",
+    imageAlt: "Rent a Ride user booking interface",
+    screenshots: [
+      {
+        src: "https://github.com/user-attachments/assets/4b769f7d-5d2c-43a7-8283-07fa8402de92",
+        alt: "Rent a Ride user module",
+      },
+      {
+        src: "https://github.com/user-attachments/assets/c08e3bf0-2776-4236-80b6-6714d52ec8d7",
+        alt: "Rent a Ride admin module",
+      },
+      {
+        src: "https://github.com/user-attachments/assets/59a9a9c7-5dc1-4f61-8d15-43266579386c",
+        alt: "Rent a Ride vendor module",
+      },
+    ],
+    category: "Full Stack",
+    title: "Rent a Ride",
+    description:
+      "A full-stack car rental platform with user, admin, and vendor modules for browsing vehicles, managing listings, booking rides, and handling orders.",
+    skills: [
+      "React",
+      "Redux Toolkit",
+      "Tailwind CSS",
+      "Node.js",
+      "Express",
+      "MongoDB",
+      "Cloudinary",
+      "JWT",
+    ],
+    github: "https://github.com/zenebumelaku/Rent_ride",
+  },
+  {
+    mediaType: "placeholder",
+    imageAlt: "API Health Checker service",
+    category: "Backend",
+    title: "API Health Checker",
+    description:
+      "A lightweight Express service that checks configured APIs in parallel and reports HTTP status, response time, errors, and timestamps.",
+    skills: ["Node.js", "Express", "REST API", "Docker", "Postman"],
+    github: "https://github.com/zenebumelaku/api_health_checker",
+  },
+];
+
+export const ProjectsSection = () => {
+  const [active, setActive] = useState("All");
+
+  const visibleProjects = useMemo(
+    () =>
+      active === "All"
+        ? projects
+        : projects.filter((project) => project.category === active),
+    [active],
+  );
+
+  return (
+    <section id="projects" className="site-section border-t border-neutral-100">
+      <div className="section-inner">
+        <p className="eyebrow">Selected work</p>
+        <h2 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
+          Projects
+        </h2>
+
+        <div className="mt-8">
+          <button
+            onClick={() => setActive("All")}
+            className={`mb-2 mr-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
+              active === "All"
+                ? "border-neutral-950 bg-neutral-950 text-white"
+                : "border-neutral-200 text-neutral-600"
+            }`}
+          >
+            All
+          </button>
+          <ProjectFilter active={active} onChange={setActive} />
+        </div>
+
+        <div className="mt-8">
+          {visibleProjects.length > 0 ? (
+            <ProjectGrid projects={visibleProjects} />
+          ) : (
+            <div className="border-y border-neutral-200 py-12 text-neutral-500">
+              <p className="text-lg font-medium text-neutral-900">
+                Projects are on the way.
+              </p>
+              <p className="mt-2 max-w-xl text-sm leading-6">
+                This space will showcase Zenebu&apos;s real work. No placeholder
+                projects are listed.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+};

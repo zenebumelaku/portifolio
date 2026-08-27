@@ -1,0 +1,1 @@
+UI component directory retained to match the source project's generated structure. The visible portfolio uses local section components rather than a large generated UI library.
