@@ -9,58 +9,34 @@ export const AboutSection = () => {
       <div className="section-inner">
         <div className="grid gap-6">
           <div className="p-6 md:p-8">
-            <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
+            <h2 className="text-5xl font-bold tracking-tight md:text-6xl">
               About Me
             </h2>
 
-            <div className="mt-8 space-y-6 text-base leading-8 text-neutral-700">
+            <div className="mt-8 space-y-6 text-lg leading-8 text-neutral-700">
               <p>
-                I&apos;m Zenebu Melaku, a{" "}
-                <strong className="font-bold text-neutral-950">
-                  fourth-year Software Engineering student
-                </strong>{" "}
-                at Addis Ababa University and a{" "}
+                I&apos;m Zenebu Melaku, a fourth-year Software Engineering
+                student at Addis Ababa University and a{" "}
                 <strong className="font-semibold text-neutral-950">
                   Full-Stack and Mobile Developer
                 </strong>{" "}
-                who builds{" "}
-                <strong className="font-bold text-neutral-950">
-                  modern, scalable web and Flutter applications
-                </strong>
-                .
+                who builds modern, scalable web and Flutter applications.
               </p>
 
               <p>
-                I enjoy turning ideas into{" "}
-                <strong className="font-bold text-neutral-950">
-                  practical digital products
-                </strong>
-                , working across frontend, backend, APIs, databases, and system
+                I enjoy turning ideas into practical digital products, working
+                across frontend, backend, APIs, databases, and system
                 architecture. I&apos;m also learning{" "}
                 <strong className="font-semibold text-neutral-950">
                   AI engineering
                 </strong>
-                , with a growing interest in{" "}
-                <strong className="font-bold text-neutral-950">
-                  machine learning, data, and intelligent applications
-                </strong>
-                .
+                , with a growing interest in machine learning, data, and
+                intelligent applications.
               </p>
 
               <p>
-                I&apos;m focused on{" "}
-                <strong className="font-bold text-neutral-950">
-                  continuous learning
-                </strong>
-                , building{" "}
-                <strong className="font-bold text-neutral-950">
-                  real-world projects
-                </strong>
-                , and becoming a{" "}
-                <strong className="font-bold text-neutral-950">
-                  versatile software engineer
-                </strong>
-                .
+                I&apos;m focused on continuous learning, building real-world
+                projects, and becoming a versatile software engineer.
               </p>
             </div>
           </div>
