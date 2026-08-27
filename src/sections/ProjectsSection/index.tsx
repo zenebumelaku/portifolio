@@ -7,6 +7,47 @@ const projects: ProjectCardProps[] = [
   {
     mediaType: "image",
     mediaSrc:
+      "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/screens.png",
+    imageAlt: "Peachy Ecommerce mobile app screens",
+    screenshots: [
+      {
+        src: "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/screens.png",
+        alt: "Peachy Ecommerce app overview",
+      },
+      {
+        src: "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/home.png",
+        alt: "Peachy Ecommerce home screen",
+      },
+      {
+        src: "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/detail_product.png",
+        alt: "Peachy Ecommerce product details screen",
+      },
+      {
+        src: "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/cart.png",
+        alt: "Peachy Ecommerce cart screen",
+      },
+      {
+        src: "https://raw.githubusercontent.com/zenebumelaku/firebase_ecommerce/main/screenshots/profile.png",
+        alt: "Peachy Ecommerce profile screen",
+      },
+    ],
+    category: "Mobile",
+    title: "Peachy Ecommerce",
+    description:
+      "A functional Flutter ecommerce app powered by Firebase, with clean architecture, BLoC state management, product discovery, checkout, order tracking, and customer messaging.",
+    skills: [
+      "Flutter",
+      "Dart",
+      "Firebase",
+      "Firestore",
+      "BLoC",
+      "Clean Architecture",
+    ],
+    github: "https://github.com/zenebumelaku/firebase_ecommerce",
+  },
+  {
+    mediaType: "image",
+    mediaSrc:
       "https://github.com/user-attachments/assets/4b769f7d-5d2c-43a7-8283-07fa8402de92",
     imageAlt: "Rent a Ride user booking interface",
     screenshots: [
