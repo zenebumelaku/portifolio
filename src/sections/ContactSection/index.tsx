@@ -13,7 +13,7 @@ export const ContactSection = () => {
         className="section-inner"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15 }}
+        viewport={{ once: false, amount: 0.15 }}
         transition={{ duration: 0.65, ease: "easeOut" }}
       >
         <div className="mb-12 text-center">
@@ -28,8 +28,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.05 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.05 }}
             >
               <ContactCard
                 href="mailto:melakuzenebu3@gmail.com"
@@ -41,8 +41,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
             >
               <ContactCard
                 href="https://github.com/zenebumelaku"
@@ -54,8 +54,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.15 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
             >
               <ContactCard
                 href="https://www.linkedin.com/in/zenebu-melaku-7b9331225/"
@@ -67,8 +67,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
             >
               <ContactCard
                 href="tel:0945712016"
@@ -80,8 +80,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.25 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.25 }}
             >
               <ContactCard
                 href="https://t.me/teninen"
@@ -93,8 +93,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
             >
               <ContactCard
                 href="https://leetcode.com/zeni_mel"
@@ -106,8 +106,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.35 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.35 }}
             >
               <ContactCard
                 href="https://t.me/zenicore"
@@ -119,8 +119,8 @@ export const ContactSection = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
+              viewport={{ once: false, amount: 0.1 }}
+              transition={{ duration: 0.4, delay: 0.4 }}
               className="flex items-center gap-4 rounded-xl border-2 border-black bg-neutral-50 p-4"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-700">
@@ -138,8 +138,8 @@ export const ContactSection = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.15 }}
+            viewport={{ once: false, amount: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
           >
             <ContactForm />
           </motion.div>

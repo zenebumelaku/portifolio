@@ -120,7 +120,7 @@ export const ProjectsSection = () => {
         className="section-inner"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.15 }}
+        viewport={{ once: false, amount: 0.15 }}
         transition={{ duration: 0.65, ease: "easeOut" }}
       >
         <p className="eyebrow">Selected work</p>

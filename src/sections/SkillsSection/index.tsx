@@ -50,7 +50,7 @@ export const SkillsSection = () => {
         className="section-inner"
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
+        viewport={{ once: false, amount: 0.15 }}
         transition={{ duration: 0.65, ease: "easeOut" }}
       >
         <p className="eyebrow">Toolbox</p>
@@ -63,7 +63,7 @@ export const SkillsSection = () => {
               key={category.title}
               initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
+              viewport={{ once: false, amount: 0.15 }}
               transition={{ duration: 0.45, delay: index * 0.08 }}
             >
               <SkillCategory {...category} />

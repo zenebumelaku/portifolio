@@ -20,7 +20,7 @@ export const ProjectCard = (props: ProjectCardProps) => {
       className="group overflow-hidden rounded-2xl border-2 border-black bg-white transition hover:shadow-xl"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.15 }}
+      viewport={{ once: false, amount: 0.15 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       whileHover={{ y: -4 }}
     >
