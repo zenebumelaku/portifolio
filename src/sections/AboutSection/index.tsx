@@ -7,7 +7,7 @@ export const AboutSection = () => {
   return (
     <section id="about" className="site-section">
       <div className="section-inner">
-        <div className="grid gap-12 lg:grid-cols-[1.15fr_.85fr] lg:gap-20">
+        <div className="grid gap-6">
           <div className="rounded-2xl border-2 border-black p-6 md:p-8">
             <h2 className="text-4xl font-bold tracking-tight md:text-5xl">
               About Me
@@ -15,33 +15,57 @@ export const AboutSection = () => {
 
             <div className="mt-8 space-y-6 text-base leading-8 text-neutral-700">
               <p>
-                I&apos;m Zenebu Melaku, a fourth-year Software Engineering
-                student at Addis Ababa University and a{" "}
+                I&apos;m Zenebu Melaku, a{" "}
+                <strong className="font-bold text-neutral-950">
+                  fourth-year Software Engineering student
+                </strong>{" "}
+                at Addis Ababa University and a{" "}
                 <strong className="font-semibold text-neutral-950">
                   Full-Stack and Mobile Developer
                 </strong>{" "}
-                who builds modern, scalable web and Flutter applications.
+                who builds{" "}
+                <strong className="font-bold text-neutral-950">
+                  modern, scalable web and Flutter applications
+                </strong>
+                .
               </p>
 
               <p>
-                I enjoy turning ideas into practical digital products, working
-                across frontend, backend, APIs, databases, and system
+                I enjoy turning ideas into{" "}
+                <strong className="font-bold text-neutral-950">
+                  practical digital products
+                </strong>
+                , working across frontend, backend, APIs, databases, and system
                 architecture. I&apos;m also learning{" "}
                 <strong className="font-semibold text-neutral-950">
                   AI engineering
                 </strong>
-                , with a growing interest in machine learning, data, and
-                intelligent applications.
+                , with a growing interest in{" "}
+                <strong className="font-bold text-neutral-950">
+                  machine learning, data, and intelligent applications
+                </strong>
+                .
               </p>
 
               <p>
-                I&apos;m focused on continuous learning, building real-world
-                projects, and becoming a versatile software engineer.
+                I&apos;m focused on{" "}
+                <strong className="font-bold text-neutral-950">
+                  continuous learning
+                </strong>
+                , building{" "}
+                <strong className="font-bold text-neutral-950">
+                  real-world projects
+                </strong>
+                , and becoming a{" "}
+                <strong className="font-bold text-neutral-950">
+                  versatile software engineer
+                </strong>
+                .
               </p>
             </div>
           </div>
 
-          <div className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid gap-4 sm:grid-cols-2">
             <AboutHighlightCard
               iconSrc={icon("EDU")}
               title="Education"
