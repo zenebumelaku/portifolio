@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 export const HeroVisual = () => {
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-[2rem] border border-neutral-200 bg-neutral-100">
+    <div className="relative h-[420px] w-full overflow-hidden rounded-[2rem] border-2 border-black bg-neutral-100">
       <img
         src="/photo.jpeg"
         alt="Portrait of Zenebu Melaku"

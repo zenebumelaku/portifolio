@@ -7,7 +7,7 @@ export const JourneySection = () => {
           Building from the ground up.
         </h2>
         <div className="mt-10 grid gap-8 md:grid-cols-3">
-          <div className="border-l-2 border-neutral-950 pl-5">
+          <div className="rounded-xl border-2 border-black p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
               Now
             </p>
@@ -17,7 +17,7 @@ export const JourneySection = () => {
               databases, and application architecture.
             </p>
           </div>
-          <div className="border-l-2 border-neutral-300 pl-5">
+          <div className="rounded-xl border-2 border-black p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
               Grounding
             </p>
@@ -29,7 +29,7 @@ export const JourneySection = () => {
               third-year student.
             </p>
           </div>
-          <div className="border-l-2 border-neutral-300 pl-5">
+          <div className="rounded-xl border-2 border-black p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-500">
               Next
             </p>
