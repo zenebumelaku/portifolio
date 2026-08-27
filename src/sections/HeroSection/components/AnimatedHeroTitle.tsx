@@ -4,7 +4,7 @@ export const AnimatedHeroTitle = () => {
   const words = ["ZENEBU", "MELAKU"];
 
   return (
-    <h1 className="max-w-3xl text-[44px] font-bold leading-[1.03] tracking-[-0.045em] text-neutral-950 sm:text-[58px] md:text-[72px]">
+    <h1 className="max-w-3xl text-[44px] font-bold leading-[1.03] tracking-tight text-neutral-950 sm:text-[58px] md:text-[72px]">
       {words.map((word, index) => (
         <motion.span
           key={word}
