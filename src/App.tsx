@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Navbar } from "@/sections/Navbar";
 import { HeroSection } from "@/sections/HeroSection";
 import { AboutSection } from "@/sections/AboutSection";
@@ -8,10 +9,21 @@ import { JourneySection } from "@/sections/JourneySection";
 import { Footer } from "@/sections/Footer";
 
 export const App = () => {
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", darkMode);
+    root.style.colorScheme = darkMode ? "dark" : "light";
+  }, [darkMode]);
+
   return (
-    <div className="min-h-screen bg-white text-neutral-950">
-      <div className="relative">
-        <Navbar />
+    <div className={darkMode ? "dark" : ""}>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        <Navbar
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode((value) => !value)}
+        />
         <main>
           <HeroSection />
           <AboutSection />

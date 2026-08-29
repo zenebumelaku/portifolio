@@ -128,17 +128,7 @@ export const ProjectsSection = () => {
           Projects
         </h2>
 
-        <div className="mt-8">
-          <button
-            onClick={() => setActive("All")}
-            className={`mb-2 mr-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
-              active === "All"
-                ? "border-neutral-950 bg-neutral-950 text-white"
-                : "border-neutral-200 text-neutral-600"
-            }`}
-          >
-            All
-          </button>
+        <div className="mt-8 flex flex-wrap items-center gap-2">
           <ProjectFilter active={active} onChange={setActive} />
         </div>
 
