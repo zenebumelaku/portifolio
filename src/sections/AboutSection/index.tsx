@@ -12,15 +12,15 @@ export const AboutSection = () => {
       >
         <div>
           <div className="p-6 md:p-8">
-            <h2 className="text-5xl font-bold tracking-tight md:text-6xl">
+            <h2 className="text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-6xl">
               About Me
             </h2>
 
-            <div className="mt-8 space-y-6 text-lg leading-8 text-neutral-700">
+            <div className="mt-8 space-y-6 text-lg leading-8 text-slate-700 dark:text-slate-300">
               <p>
                 I&apos;m Zenebu Melaku, a fourth-year Software Engineering
                 student at Addis Ababa University and a{" "}
-                <strong className="font-semibold text-neutral-950">
+                <strong className="font-semibold text-slate-950 dark:text-slate-100">
                   Full-Stack and Mobile Developer
                 </strong>{" "}
                 who builds modern, scalable web and Flutter applications.
@@ -30,7 +30,7 @@ export const AboutSection = () => {
                 I enjoy turning ideas into practical digital products, working
                 across frontend, backend, APIs, databases, and system
                 architecture. I&apos;m also learning{" "}
-                <strong className="font-semibold text-neutral-950">
+                <strong className="font-semibold text-slate-950 dark:text-slate-100">
                   AI engineering
                 </strong>
                 , with a growing interest in machine learning, data, and

@@ -8,7 +8,10 @@ const icon = (name: string) =>
 
 export const ContactSection = () => {
   return (
-    <section id="contact" className="site-section border-t border-neutral-100">
+    <section
+      id="contact"
+      className="site-section border-t border-slate-200 dark:border-slate-800"
+    >
       <motion.div
         className="section-inner"
         initial={{ opacity: 0, y: 24 }}
@@ -18,7 +21,7 @@ export const ContactSection = () => {
       >
         <div className="mb-12 text-center">
           <p className="eyebrow">Get in touch</p>
-          <h2 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
+          <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-5xl">
             Contact Me
           </h2>
         </div>
@@ -121,16 +124,18 @@ export const ContactSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: false, amount: 0.1 }}
               transition={{ duration: 0.4, delay: 0.4 }}
-              className="flex items-center gap-4 rounded-xl border-2 border-black bg-neutral-50 p-4"
+              className="flex items-center gap-4 rounded-xl border-2 border-slate-900 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-neutral-700">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-200">
                 <MapPin size={18} />
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Location
                 </p>
-                <p className="text-sm font-semibold">Addis Ababa, Ethiopia</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Addis Ababa, Ethiopia
+                </p>
               </div>
             </motion.div>
           </div>
