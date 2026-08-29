@@ -124,7 +124,7 @@ export const ProjectsSection = () => {
         transition={{ duration: 0.65, ease: "easeOut" }}
       >
         <p className="eyebrow">Selected work</p>
-        <h2 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">
+        <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-5xl">
           Projects
         </h2>
 
@@ -136,11 +136,11 @@ export const ProjectsSection = () => {
           {visibleProjects.length > 0 ? (
             <ProjectGrid projects={visibleProjects} />
           ) : (
-            <div className="border-y border-neutral-200 py-12 text-neutral-500">
-              <p className="text-lg font-medium text-neutral-900">
+            <div className="border-y border-neutral-200 py-12 text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <p className="text-lg font-medium text-slate-900 dark:text-slate-50">
                 Projects are on the way.
               </p>
-              <p className="mt-2 max-w-xl text-sm leading-6">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                 This space will showcase Zenebu&apos;s real work. No placeholder
                 projects are listed.
               </p>

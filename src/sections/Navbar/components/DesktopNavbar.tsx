@@ -21,9 +21,9 @@ export const DesktopNavbar = ({
     <div className="hidden items-center justify-between md:flex">
       <a
         href="#home"
-        className="text-lg font-bold tracking-tight text-neutral-950 dark:text-white"
+        className="text-lg font-bold tracking-tight text-slate-950 dark:text-slate-50"
       >
-        zenebu<span className="text-neutral-400">.dev</span>
+        zenebu<span className="text-slate-400 dark:text-sky-300">.dev</span>
       </a>
 
       <nav className="flex items-center gap-7">

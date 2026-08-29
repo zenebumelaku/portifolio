@@ -17,9 +17,9 @@ export const MobileNavbar = ({
       <div className="flex items-center justify-between">
         <a
           href="#home"
-          className="text-lg font-bold text-neutral-950 dark:text-white"
+          className="text-lg font-bold text-slate-950 dark:text-slate-50"
         >
-          zenebu<span className="text-neutral-400">.dev</span>
+          zenebu<span className="text-slate-400 dark:text-sky-300">.dev</span>
         </a>
         <div className="flex items-center gap-2">
           <button
