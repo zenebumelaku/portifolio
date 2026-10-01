@@ -89,6 +89,7 @@ const projects: ProjectCardProps[] = [
       "Cloudinary",
       "JWT",
     ],
+    live: "https://rent-ride-39el.vercel.app/",
     github: "https://github.com/zenebumelaku/Rent_ride",
   },
   {
