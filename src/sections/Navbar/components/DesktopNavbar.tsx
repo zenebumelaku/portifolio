@@ -7,7 +7,6 @@ type DesktopNavbarProps = {
 
 const links = [
   ["About", "#about"],
-  ["Journey", "#journey"],
   ["Skills", "#skills"],
   ["Projects", "#projects"],
   ["Contact", "#contact"],

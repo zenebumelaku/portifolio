@@ -5,7 +5,6 @@ import { AboutSection } from "@/sections/AboutSection";
 import { SkillsSection } from "@/sections/SkillsSection";
 import { ProjectsSection } from "@/sections/ProjectsSection";
 import { ContactSection } from "@/sections/ContactSection";
-import { JourneySection } from "@/sections/JourneySection";
 import { Footer } from "@/sections/Footer";
 import { usePortfolioSiteContent } from "@/data/site-content";
 import {
@@ -40,7 +39,6 @@ const PortfolioSite = () => {
         <main>
           <HeroSection content={content.hero} />
           <AboutSection content={content.about} />
-          <JourneySection content={content.journey} />
           <ExperienceSection content={content.experience} />
           <SkillsSection content={content.skills} />
           <CertificationsSection content={content.certifications} />

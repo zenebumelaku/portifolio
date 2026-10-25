@@ -42,7 +42,7 @@ export const MobileNavbar = ({
 
       {open && (
         <nav className="mt-4 grid gap-1 border-t border-neutral-100 pt-3 dark:border-neutral-800">
-          {["About", "Journey", "Skills", "Projects", "Contact"].map((item) => (
+          {["About", "Skills", "Projects", "Contact"].map((item) => (
             <a
               key={item}
               href={`#${item.toLowerCase().replace(" ", "-")}`}

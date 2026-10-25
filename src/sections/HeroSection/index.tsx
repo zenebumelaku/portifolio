@@ -19,7 +19,7 @@ export const HeroSection = ({
           </p>
           <h1 className="text-4xl font-black tracking-tight text-slate-950 dark:text-slate-50 md:text-6xl">
             <span className="block">{content.headline}</span>
-            <span className="mt-2 block text-indigo-600 dark:text-indigo-400">
+            <span className="mt-2 block text-slate-500 dark:text-slate-400">
               {content.accentText}
             </span>
           </h1>

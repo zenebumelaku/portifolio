@@ -16,15 +16,6 @@ export type PortfolioSiteContent = {
     heading: string;
     paragraphs: string[];
   };
-  journey: {
-    eyebrow: string;
-    title: string;
-    items: Array<{
-      period: string;
-      title: string;
-      description: string;
-    }>;
-  };
   experience: {
     eyebrow: string;
     title: string;
@@ -98,33 +89,9 @@ export const defaultPortfolioSiteContent: PortfolioSiteContent = {
   about: {
     heading: "About Me",
     paragraphs: [
-      "I'm Zenebu Melaku, a fourth-year Software Engineering student at Addis Ababa University and a Full-Stack and Mobile Developer who builds modern, scalable web and Flutter applications.",
-      "I enjoy turning ideas into practical digital products, working across frontend, backend, APIs, databases, and system architecture. I'm also learning AI engineering, with a growing interest in machine learning, data, and intelligent applications.",
-      "I'm focused on continuous learning, building real-world projects, and becoming a versatile software engineer.",
-    ],
-  },
-  journey: {
-    eyebrow: "The journey",
-    title: "Building from the ground up.",
-    items: [
-      {
-        period: "Now",
-        title: "Full-Stack Developer",
-        description:
-          "Creating complete digital products across interfaces, APIs, databases, and application architecture.",
-      },
-      {
-        period: "Grounding",
-        title: "Software Engineering Student",
-        description:
-          "Studying Software Engineering at Addis Ababa University as a third-year student.",
-      },
-      {
-        period: "Next",
-        title: "AI Engineer",
-        description:
-          "Growing toward intelligent systems through machine learning, data engineering, and AI experimentation.",
-      },
+      "**I'm Zenebu Melaku**, a fourth-year **Software Engineering student** at Addis Ababa University and a **Full-Stack and Mobile Developer** who builds modern, scalable web and Flutter applications.",
+      "I enjoy turning ideas into **practical digital products**, working across frontend, backend, APIs, databases, and system architecture. I'm also learning **AI engineering**, with a growing interest in machine learning, data, and intelligent applications.",
+      "I'm focused on **continuous learning**, building **real-world projects**, and becoming a versatile software engineer.",
     ],
   },
   experience: {
@@ -251,13 +218,18 @@ const asStringArray = (value: unknown, fallback: string[]) =>
     ? (value as string[])
     : fallback;
 
+const legacyAboutParagraphs = [
+  "I'm Zenebu Melaku, a fourth-year Software Engineering student at Addis Ababa University and a Full-Stack and Mobile Developer who builds modern, scalable web and Flutter applications.",
+  "I enjoy turning ideas into practical digital products, working across frontend, backend, APIs, databases, and system architecture. I'm also learning AI engineering, with a growing interest in machine learning, data, and intelligent applications.",
+  "I'm focused on continuous learning, building real-world projects, and becoming a versatile software engineer.",
+];
+
 export const normalizePortfolioSiteContent = (
   value: unknown,
 ): PortfolioSiteContent => {
   const source = isRecord(value) ? value : {};
   const heroSource = isRecord(source.hero) ? source.hero : {};
   const aboutSource = isRecord(source.about) ? source.about : {};
-  const journeySource = isRecord(source.journey) ? source.journey : {};
   const experienceSource = isRecord(source.experience) ? source.experience : {};
   const certificationsSource = isRecord(source.certifications)
     ? source.certifications
@@ -268,6 +240,11 @@ export const normalizePortfolioSiteContent = (
     : {};
   const contactSource = isRecord(source.contact) ? source.contact : {};
   const footerSource = isRecord(source.footer) ? source.footer : {};
+
+  const aboutParagraphs = asStringArray(
+    aboutSource.paragraphs,
+    defaultPortfolioSiteContent.about.paragraphs,
+  );
 
   return {
     hero: {
@@ -285,34 +262,12 @@ export const normalizePortfolioSiteContent = (
     about: {
       ...defaultPortfolioSiteContent.about,
       ...aboutSource,
-      paragraphs: asStringArray(
-        aboutSource.paragraphs,
-        defaultPortfolioSiteContent.about.paragraphs,
-      ),
-    },
-    journey: {
-      ...defaultPortfolioSiteContent.journey,
-      ...journeySource,
-      items: Array.isArray(journeySource.items)
-        ? (journeySource.items as unknown[]).map((item, index) => {
-            const current = isRecord(item) ? item : {};
-            const fallback =
-              defaultPortfolioSiteContent.journey.items[index] ??
-              defaultPortfolioSiteContent.journey.items[0];
-            return {
-              period:
-                typeof current.period === "string"
-                  ? current.period
-                  : fallback.period,
-              title:
-                typeof current.title === "string" ? current.title : fallback.title,
-              description:
-                typeof current.description === "string"
-                  ? current.description
-                  : fallback.description,
-            };
-          })
-        : defaultPortfolioSiteContent.journey.items,
+      paragraphs: aboutParagraphs.map((paragraph) => {
+        const legacyIndex = legacyAboutParagraphs.indexOf(paragraph);
+        return legacyIndex < 0
+          ? paragraph
+          : defaultPortfolioSiteContent.about.paragraphs[legacyIndex];
+      }),
     },
     experience: {
       ...defaultPortfolioSiteContent.experience,

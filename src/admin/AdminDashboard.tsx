@@ -1439,42 +1439,6 @@ const SiteContentEditor = ({
     }));
   };
 
-  const setJourneyItem = (
-    index: number,
-    field: "period" | "title" | "description",
-    value: string,
-  ) => {
-    setDraft((current) => ({
-      ...current,
-      journey: {
-        ...current.journey,
-        items: current.journey.items.map((item, itemIndex) =>
-          itemIndex === index ? { ...item, [field]: value } : item,
-        ),
-      },
-    }));
-  };
-
-  const addJourneyItem = () => {
-    setDraft((current) => ({
-      ...current,
-      journey: {
-        ...current.journey,
-        items: [...current.journey.items, { period: "", title: "", description: "" }],
-      },
-    }));
-  };
-
-  const removeJourneyItem = (index: number) => {
-    setDraft((current) => ({
-      ...current,
-      journey: {
-        ...current.journey,
-        items: current.journey.items.filter((_, itemIndex) => itemIndex !== index),
-      },
-    }));
-  };
-
   const setExperienceItem = (
     index: number,
     field: "period" | "role" | "organization" | "location" | "description" | "highlights",
@@ -1766,6 +1730,9 @@ const SiteContentEditor = ({
             </label>
             <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
               Paragraphs
+              <span className="font-normal text-slate-500">
+                Wrap text in **double asterisks** to make it bold.
+              </span>
               <textarea
                 rows={6}
                 value={draft.about.paragraphs.join("\n\n")}
@@ -1773,83 +1740,6 @@ const SiteContentEditor = ({
                 className={`${inputClass} resize-y`}
               />
             </label>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
-          <h3 className="text-sm font-semibold text-slate-900">Background timeline</h3>
-          <div className="mt-4 grid gap-4">
-            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
-              Eyebrow
-              <input
-                value={draft.journey.eyebrow}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    journey: { ...current.journey, eyebrow: event.target.value },
-                  }))
-                }
-                className={inputClass}
-              />
-            </label>
-            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
-              Title
-              <input
-                value={draft.journey.title}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    journey: { ...current.journey, title: event.target.value },
-                  }))
-                }
-                className={inputClass}
-              />
-            </label>
-            {draft.journey.items.map((item, index) => (
-              <div key={`${item.title}-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => removeJourneyItem(index)}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 size={13} /> Remove milestone
-                  </button>
-                </div>
-                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
-                  Period
-                  <input
-                    value={item.period}
-                    onChange={(event) => setJourneyItem(index, "period", event.target.value)}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
-                  Title
-                  <input
-                    value={item.title}
-                    onChange={(event) => setJourneyItem(index, "title", event.target.value)}
-                    className={inputClass}
-                  />
-                </label>
-                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
-                  Description
-                  <textarea
-                    rows={3}
-                    value={item.description}
-                    onChange={(event) => setJourneyItem(index, "description", event.target.value)}
-                    className={`${inputClass} resize-y`}
-                  />
-                </label>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addJourneyItem}
-              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              <Plus size={14} /> Add timeline milestone
-            </button>
           </div>
         </div>
 

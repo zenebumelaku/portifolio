@@ -4,6 +4,17 @@ import {
   type PortfolioSiteContent,
 } from "@/data/site-content";
 
+const renderParagraph = (paragraph: string) =>
+  paragraph.split(/(\*\*.+?\*\*)/g).map((part, index) =>
+    part.startsWith("**") && part.endsWith("**") ? (
+      <strong key={index} className="font-semibold text-slate-900 dark:text-slate-100">
+        {part.slice(2, -2)}
+      </strong>
+    ) : (
+      part
+    ),
+  );
+
 export const AboutSection = ({
   content = defaultPortfolioSiteContent.about,
 }: {
@@ -26,7 +37,9 @@ export const AboutSection = ({
 
             <div className="mt-8 space-y-6 text-lg leading-8 text-slate-700 dark:text-slate-300">
               {content.paragraphs.map((paragraph, index) => (
-                <p key={`${content.heading}-${index}`}>{paragraph}</p>
+                <p key={`${content.heading}-${index}`}>
+                  {renderParagraph(paragraph)}
+                </p>
               ))}
             </div>
           </div>
