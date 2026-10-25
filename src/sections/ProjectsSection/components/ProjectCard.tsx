@@ -18,11 +18,8 @@ export const ProjectCard = (props: ProjectCardProps) => {
   return (
     <motion.article
       className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-xl dark:border-slate-700 dark:bg-slate-900"
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: false, amount: 0.15 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
       whileHover={{ y: -4 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
     >
       <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-800">
         {props.mediaType === "image" && props.mediaSrc ? (
