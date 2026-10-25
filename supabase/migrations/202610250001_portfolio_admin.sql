@@ -5,6 +5,9 @@ create table if not exists public.portfolio_admins (
 
 alter table public.portfolio_admins enable row level security;
 
+drop policy if exists "Admins can read their own access record"
+  on public.portfolio_admins;
+
 create policy "Admins can read their own access record"
   on public.portfolio_admins
   for select
@@ -23,6 +26,17 @@ create table if not exists public.portfolio_projects (
 );
 
 alter table public.portfolio_projects enable row level security;
+
+drop policy if exists "Anyone can read published projects"
+  on public.portfolio_projects;
+drop policy if exists "Admins can read all projects"
+  on public.portfolio_projects;
+drop policy if exists "Admins can add projects"
+  on public.portfolio_projects;
+drop policy if exists "Admins can update projects"
+  on public.portfolio_projects;
+drop policy if exists "Admins can delete projects"
+  on public.portfolio_projects;
 
 create policy "Anyone can read published projects"
   on public.portfolio_projects
