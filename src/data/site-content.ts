@@ -36,6 +36,18 @@ export type PortfolioSiteContent = {
       issuer: string;
       date: string;
       credentialUrl: string;
+      imageUrl: string;
+    }>;
+  };
+  achievements: {
+    eyebrow: string;
+    title: string;
+    items: Array<{
+      title: string;
+      organization: string;
+      date: string;
+      description: string;
+      credentialUrl: string;
     }>;
   };
   skills: {
@@ -102,6 +114,11 @@ export const defaultPortfolioSiteContent: PortfolioSiteContent = {
   certifications: {
     eyebrow: "Certifications",
     title: "Learning, recognized.",
+    items: [],
+  },
+  achievements: {
+    eyebrow: "Achievements",
+    title: "Milestones worth celebrating.",
     items: [],
   },
   skills: {
@@ -234,6 +251,9 @@ export const normalizePortfolioSiteContent = (
   const certificationsSource = isRecord(source.certifications)
     ? source.certifications
     : {};
+  const achievementsSource = isRecord(source.achievements)
+    ? source.achievements
+    : {};
   const skillsSource = isRecord(source.skills) ? source.skills : {};
   const testimonialsSource = isRecord(source.testimonials)
     ? source.testimonials
@@ -300,9 +320,29 @@ export const normalizePortfolioSiteContent = (
               date: typeof item.date === "string" ? item.date : "",
               credentialUrl:
                 typeof item.credentialUrl === "string" ? item.credentialUrl : "",
+              imageUrl: typeof item.imageUrl === "string" ? item.imageUrl : "",
             }];
           })
         : defaultPortfolioSiteContent.certifications.items,
+    },
+    achievements: {
+      ...defaultPortfolioSiteContent.achievements,
+      ...achievementsSource,
+      items: Array.isArray(achievementsSource.items)
+        ? achievementsSource.items.flatMap((item) => {
+            if (!isRecord(item)) return [];
+            return [{
+              title: typeof item.title === "string" ? item.title : "",
+              organization:
+                typeof item.organization === "string" ? item.organization : "",
+              date: typeof item.date === "string" ? item.date : "",
+              description:
+                typeof item.description === "string" ? item.description : "",
+              credentialUrl:
+                typeof item.credentialUrl === "string" ? item.credentialUrl : "",
+            }];
+          })
+        : defaultPortfolioSiteContent.achievements.items,
     },
     skills: {
       ...defaultPortfolioSiteContent.skills,
@@ -430,6 +470,39 @@ export const savePortfolioContent = async (content: PortfolioSiteContent) => {
   });
 
   if (error) throw error;
+};
+
+export const uploadCertificationImage = async (file: File) => {
+  const { supabase } = await import("@/data/supabase");
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+  ];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Choose a JPEG, PNG, WebP, GIF, or AVIF image.");
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error("Certificate images must be 10 MB or smaller.");
+  }
+
+  const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
+  const objectPath = `certifications/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from("portfolio-project-media")
+    .upload(objectPath, file, {
+      contentType: file.type,
+      cacheControl: "31536000",
+      upsert: false,
+    });
+
+  if (error) throw error;
+  return supabase.storage.from("portfolio-project-media").getPublicUrl(objectPath)
+    .data.publicUrl;
 };
 
 export const usePortfolioSiteContent = () => {

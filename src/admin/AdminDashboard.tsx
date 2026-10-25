@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import {
   ArrowUpRight,
   ArrowUpRightFromSquare,
@@ -22,6 +29,7 @@ import {
   Settings2,
   Sparkles,
   Trash2,
+  Trophy,
   X,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
@@ -40,6 +48,7 @@ import {
   loadAdminPortfolioContent,
   normalizePortfolioSiteContent,
   savePortfolioContent,
+  uploadCertificationImage,
   type PortfolioSiteContent,
 } from "@/data/site-content";
 
@@ -59,8 +68,22 @@ const blankProject: ProjectDraft = {
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50";
 
+const errorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return fallback;
+};
+
 export const AdminDashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
+  const sessionUserId = useRef<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -85,44 +108,51 @@ export const AdminDashboard = () => {
       .getSession()
       .then(({ data, error }) => {
         if (error) setStorageError(error.message);
+        sessionUserId.current = data.session?.user.id ?? null;
         setSession(data.session);
         setAuthLoading(false);
       })
       .catch((error: unknown) => {
-        setStorageError(
-          error instanceof Error ? error.message : "Could not check your session.",
-        );
+        setStorageError(errorMessage(error, "Could not check your session."));
         setAuthLoading(false);
       });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      const userChanged = sessionUserId.current !== nextUserId;
+      sessionUserId.current = nextUserId;
       setSession(nextSession);
-      setIsAdmin(false);
-      setProjects([]);
-      setProjectsLoading(Boolean(nextSession));
+      if (userChanged) {
+        setIsAdmin(false);
+        setProjects([]);
+        setPage("overview");
+        setEditor(null);
+        setProjectsLoading(Boolean(nextSession));
+        setStorageError("");
+      }
       setAuthLoading(false);
-      setStorageError("");
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!supabase || !session) {
+    if (!supabase || !sessionUserId.current) {
       setIsAdmin(false);
       setCheckingAccess(false);
       setProjectsLoading(false);
       return;
     }
 
+    const userId = sessionUserId.current;
     let active = true;
     setCheckingAccess(true);
     supabase
       .from("portfolio_admins")
       .select("user_id")
-      .eq("user_id", session.user.id)
+      .eq("user_id", userId)
       .maybeSingle()
       .then(
         ({ data, error }) => {
@@ -138,9 +168,10 @@ export const AdminDashboard = () => {
         (error: unknown) => {
           if (!active) return;
           setStorageError(
-            error instanceof Error
-              ? `Could not verify admin access: ${error.message}`
-              : "Could not verify admin access.",
+            `Could not verify admin access: ${errorMessage(
+              error,
+              "Unknown error.",
+            )}`,
           );
           setIsAdmin(false);
           setCheckingAccess(false);
@@ -150,7 +181,7 @@ export const AdminDashboard = () => {
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (!supabase || !isAdmin) return;
@@ -169,9 +200,7 @@ export const AdminDashboard = () => {
         } else {
           errors.push(
             `Could not load projects: ${
-              projectsResult.reason instanceof Error
-                ? projectsResult.reason.message
-                : "Unknown error."
+              errorMessage(projectsResult.reason, "Unknown error.")
             }`,
           );
         }
@@ -180,9 +209,7 @@ export const AdminDashboard = () => {
         } else {
           errors.push(
             `Could not load site content: ${
-              contentResult.reason instanceof Error
-                ? contentResult.reason.message
-                : "Unknown error."
+              errorMessage(contentResult.reason, "Unknown error.")
             }`,
           );
         }
@@ -1414,6 +1441,9 @@ const SiteContentEditor = ({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [uploadingCertificateIndex, setUploadingCertificateIndex] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     setDraft(normalizePortfolioSiteContent(initial));
@@ -1495,7 +1525,7 @@ const SiteContentEditor = ({
 
   const setCertificationItem = (
     index: number,
-    field: "name" | "issuer" | "date" | "credentialUrl",
+    field: "name" | "issuer" | "date" | "credentialUrl" | "imageUrl",
     value: string,
   ) => {
     setDraft((current) => ({
@@ -1509,6 +1539,19 @@ const SiteContentEditor = ({
     }));
   };
 
+  const handleCertificationImageUpload = async (index: number, file: File) => {
+    setUploadingCertificateIndex(index);
+    setError("");
+    try {
+      const imageUrl = await uploadCertificationImage(file);
+      setCertificationItem(index, "imageUrl", imageUrl);
+    } catch (caughtError) {
+      setError(errorMessage(caughtError, "Could not upload the certificate image."));
+    } finally {
+      setUploadingCertificateIndex(null);
+    }
+  };
+
   const addCertificationItem = () => {
     setDraft((current) => ({
       ...current,
@@ -1516,7 +1559,7 @@ const SiteContentEditor = ({
         ...current.certifications,
         items: [
           ...current.certifications.items,
-          { name: "", issuer: "", date: "", credentialUrl: "" },
+          { name: "", issuer: "", date: "", credentialUrl: "", imageUrl: "" },
         ],
       },
     }));
@@ -1528,6 +1571,45 @@ const SiteContentEditor = ({
       certifications: {
         ...current.certifications,
         items: current.certifications.items.filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  };
+
+  const setAchievementItem = (
+    index: number,
+    field: "title" | "organization" | "date" | "description" | "credentialUrl",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      achievements: {
+        ...current.achievements,
+        items: current.achievements.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, [field]: value } : item,
+        ),
+      },
+    }));
+  };
+
+  const addAchievementItem = () => {
+    setDraft((current) => ({
+      ...current,
+      achievements: {
+        ...current.achievements,
+        items: [
+          ...current.achievements.items,
+          { title: "", organization: "", date: "", description: "", credentialUrl: "" },
+        ],
+      },
+    }));
+  };
+
+  const removeAchievementItem = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      achievements: {
+        ...current.achievements,
+        items: current.achievements.items.filter((_, itemIndex) => itemIndex !== index),
       },
     }));
   };
@@ -1907,6 +1989,7 @@ const SiteContentEditor = ({
                   <button
                     type="button"
                     onClick={() => removeCertificationItem(index)}
+                    disabled={uploadingCertificateIndex !== null}
                     className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
                   >
                     <Trash2 size={13} /> Remove certificate
@@ -1928,14 +2011,165 @@ const SiteContentEditor = ({
                   Credential URL (optional)
                   <input value={item.credentialUrl} onChange={(event) => setCertificationItem(index, "credentialUrl", event.target.value)} className={inputClass} />
                 </label>
+                <div className="grid gap-2 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Certificate image
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                    disabled={uploadingCertificateIndex !== null}
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0];
+                      if (file) void handleCertificationImageUpload(index, file);
+                      event.currentTarget.value = "";
+                    }}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-semibold"
+                  />
+                  <span className="font-normal text-slate-500">
+                    {uploadingCertificateIndex === index
+                      ? "Uploading image…"
+                      : item.imageUrl
+                        ? "Image uploaded. Choose another file to replace it."
+                        : "Upload a certificate image (JPEG, PNG, WebP, GIF, or AVIF; up to 10 MB)."}
+                  </span>
+                  {item.imageUrl && (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={item.imageUrl}
+                        alt={`${item.name || "Certificate"} preview`}
+                        className="h-16 w-24 rounded-lg border border-slate-200 object-cover"
+                      />
+                      <button
+                        type="button"
+                        disabled={uploadingCertificateIndex !== null}
+                        onClick={() => setCertificationItem(index, "imageUrl", "")}
+                        className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+                      >
+                        Remove image
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
             <button
               type="button"
               onClick={addCertificationItem}
+              disabled={uploadingCertificateIndex !== null}
               className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
             >
               <Plus size={14} /> Add certification
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Achievements</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.achievements.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    achievements: {
+                      ...current.achievements,
+                      eyebrow: event.target.value,
+                    },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Section title
+              <input
+                value={draft.achievements.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    achievements: {
+                      ...current.achievements,
+                      title: event.target.value,
+                    },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.achievements.items.map((item, index) => (
+              <div
+                key={`achievement-${index}`}
+                className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-2"
+              >
+                <div className="flex justify-end md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => removeAchievementItem(index)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 size={13} /> Remove achievement
+                  </button>
+                </div>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Achievement
+                  <input
+                    value={item.title}
+                    onChange={(event) =>
+                      setAchievementItem(index, "title", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Organization
+                  <input
+                    value={item.organization}
+                    onChange={(event) =>
+                      setAchievementItem(index, "organization", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Date
+                  <input
+                    value={item.date}
+                    onChange={(event) =>
+                      setAchievementItem(index, "date", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Credential URL (optional)
+                  <input
+                    value={item.credentialUrl}
+                    onChange={(event) =>
+                      setAchievementItem(index, "credentialUrl", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Description
+                  <textarea
+                    rows={3}
+                    value={item.description}
+                    onChange={(event) =>
+                      setAchievementItem(index, "description", event.target.value)
+                    }
+                    className={`${inputClass} resize-y`}
+                  />
+                </label>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addAchievementItem}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Plus size={14} /> Add achievement
             </button>
           </div>
         </div>
@@ -2150,11 +2384,19 @@ const SiteContentEditor = ({
           </button>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || uploadingCertificateIndex !== null}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60"
           >
-            {saving ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={15} />}
-            {saving ? "Saving..." : "Save site content"}
+            {saving || uploadingCertificateIndex !== null ? (
+              <LoaderCircle size={15} className="animate-spin" />
+            ) : (
+              <Check size={15} />
+            )}
+            {uploadingCertificateIndex !== null
+              ? "Uploading certificate image..."
+              : saving
+                ? "Saving..."
+                : "Save site content"}
           </button>
         </div>
       </form>

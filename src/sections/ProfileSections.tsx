@@ -1,10 +1,16 @@
-import { Award, BriefcaseBusiness, Quote, ExternalLink } from "lucide-react";
+import {
+  Award,
+  BriefcaseBusiness,
+  ExternalLink,
+  Quote,
+  Trophy,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import type { PortfolioSiteContent } from "@/data/site-content";
 
 type ProfileSectionsContent = Pick<
   PortfolioSiteContent,
-  "experience" | "certifications" | "testimonials"
+  "experience" | "certifications" | "achievements" | "testimonials"
 >;
 
 const sectionMotion = {
@@ -91,7 +97,16 @@ export const CertificationsSection = ({
               className="flex min-h-52 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
               whileHover={{ y: -3 }}
             >
-              <Award className="text-indigo-600 dark:text-indigo-300" size={25} />
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt={`${item.name} certificate`}
+                  loading="lazy"
+                  className="mb-4 h-36 w-full rounded-xl object-cover"
+                />
+              ) : (
+                <Award className="text-indigo-600 dark:text-indigo-300" size={25} />
+              )}
               <h3 className="mt-5 text-lg font-bold leading-6 text-slate-900 dark:text-slate-50">
                 {item.name}
               </h3>
@@ -115,6 +130,64 @@ export const CertificationsSection = ({
       ) : (
         <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
           Certificates and professional credentials will appear here.
+        </p>
+      )}
+    </motion.div>
+  </section>
+);
+
+export const AchievementsSection = ({
+  content,
+}: {
+  content: ProfileSectionsContent["achievements"];
+}) => (
+  <section
+    id="achievements"
+    className="site-section border-t border-slate-200 dark:border-slate-800"
+  >
+    <motion.div className="section-inner" {...sectionMotion}>
+      <p className="eyebrow">{content.eyebrow}</p>
+      <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-5xl">
+        {content.title}
+      </h2>
+      {content.items.length > 0 ? (
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {content.items.map((item, index) => (
+            <motion.article
+              key={`${item.title}-${item.organization}-${index}`}
+              className="flex min-h-52 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+              whileHover={{ y: -3 }}
+            >
+              <Trophy className="text-indigo-600 dark:text-indigo-300" size={25} />
+              <h3 className="mt-5 text-lg font-bold leading-6 text-slate-900 dark:text-slate-50">
+                {item.title}
+              </h3>
+              {(item.organization || item.date) && (
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  {[item.organization, item.date].filter(Boolean).join(" · ")}
+                </p>
+              )}
+              {item.description && (
+                <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  {item.description}
+                </p>
+              )}
+              {item.credentialUrl && (
+                <a
+                  href={item.credentialUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-semibold text-indigo-700 hover:text-indigo-900 dark:text-indigo-300 dark:hover:text-indigo-200"
+                >
+                  View achievement <ExternalLink size={15} />
+                </a>
+              )}
+            </motion.article>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-6 max-w-2xl text-sm leading-7 text-slate-600 dark:text-slate-300">
+          Achievements and milestones will appear here.
         </p>
       )}
     </motion.div>

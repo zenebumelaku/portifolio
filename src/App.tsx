@@ -8,6 +8,7 @@ import { ContactSection } from "@/sections/ContactSection";
 import { Footer } from "@/sections/Footer";
 import { usePortfolioSiteContent } from "@/data/site-content";
 import {
+  AchievementsSection,
   CertificationsSection,
   ExperienceSection,
   TestimonialsSection,
@@ -42,6 +43,7 @@ const PortfolioSite = () => {
           <ExperienceSection content={content.experience} />
           <SkillsSection content={content.skills} />
           <CertificationsSection content={content.certifications} />
+          <AchievementsSection content={content.achievements} />
           <ProjectsSection />
           <TestimonialsSection content={content.testimonials} />
           <ContactSection content={content.contact} />
