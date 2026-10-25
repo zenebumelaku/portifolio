@@ -7,8 +7,9 @@ import { ProjectsSection } from "@/sections/ProjectsSection";
 import { ContactSection } from "@/sections/ContactSection";
 import { JourneySection } from "@/sections/JourneySection";
 import { Footer } from "@/sections/Footer";
+import { AdminDashboard } from "@/admin/AdminDashboard";
 
-export const App = () => {
+const PortfolioSite = () => {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -37,5 +38,12 @@ export const App = () => {
     </div>
   );
 };
+
+export const App = () =>
+  window.location.pathname.startsWith("/admin") ? (
+    <AdminDashboard />
+  ) : (
+    <PortfolioSite />
+  );
 
 export default App;

@@ -1,11 +1,14 @@
 type ProjectFilterProps = {
   active: string;
+  categories: string[];
   onChange: (category: string) => void;
 };
 
-const categories = ["All", "Full Stack", "Mobile", "Backend"];
-
-export const ProjectFilter = ({ active, onChange }: ProjectFilterProps) => {
+export const ProjectFilter = ({
+  active,
+  categories,
+  onChange,
+}: ProjectFilterProps) => {
   return (
     <div className="flex flex-row flex-wrap items-center gap-2">
       {categories.map((category) => (
