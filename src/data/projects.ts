@@ -225,6 +225,43 @@ export const savePortfolioProject = async (
   if (error) throw error;
 };
 
+export const uploadProjectMedia = async (file: File, projectId: string) => {
+  const { supabase } = await import("@/data/supabase");
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+    "video/mp4",
+    "video/webm",
+  ];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Choose a JPEG, PNG, WebP, GIF, AVIF, MP4, or WebM file.");
+  }
+  const sizeLimit = file.type.startsWith("video/") ? 50 : 10;
+  if (file.size > sizeLimit * 1024 * 1024) {
+    throw new Error(`Project media must be ${sizeLimit} MB or smaller.`);
+  }
+
+  const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
+  const safeProjectId = projectId.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const objectPath = `${safeProjectId}/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from("portfolio-project-media")
+    .upload(objectPath, file, {
+      contentType: file.type,
+      cacheControl: "31536000",
+      upsert: false,
+    });
+
+  if (error) throw error;
+  return supabase.storage.from("portfolio-project-media").getPublicUrl(objectPath)
+    .data.publicUrl;
+};
+
 export const deletePortfolioProject = async (id: string) => {
   const { supabase } = await import("@/data/supabase");
   if (!supabase) throw new Error("Supabase is not configured.");

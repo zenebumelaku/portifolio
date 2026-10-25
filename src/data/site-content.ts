@@ -25,6 +25,28 @@ export type PortfolioSiteContent = {
       description: string;
     }>;
   };
+  experience: {
+    eyebrow: string;
+    title: string;
+    items: Array<{
+      period: string;
+      role: string;
+      organization: string;
+      location: string;
+      description: string;
+      highlights: string[];
+    }>;
+  };
+  certifications: {
+    eyebrow: string;
+    title: string;
+    items: Array<{
+      name: string;
+      issuer: string;
+      date: string;
+      credentialUrl: string;
+    }>;
+  };
   skills: {
     eyebrow: string;
     title: string;
@@ -44,6 +66,16 @@ export type PortfolioSiteContent = {
     }>;
     locationLabel: string;
     locationValue: string;
+  };
+  testimonials: {
+    eyebrow: string;
+    title: string;
+    items: Array<{
+      quote: string;
+      name: string;
+      role: string;
+      organization: string;
+    }>;
   };
   footer: {
     name: string;
@@ -95,6 +127,16 @@ export const defaultPortfolioSiteContent: PortfolioSiteContent = {
       },
     ],
   },
+  experience: {
+    eyebrow: "Work experience",
+    title: "Where I’ve contributed.",
+    items: [],
+  },
+  certifications: {
+    eyebrow: "Certifications",
+    title: "Learning, recognized.",
+    items: [],
+  },
   skills: {
     eyebrow: "Toolbox",
     title: "My Skills",
@@ -139,6 +181,11 @@ export const defaultPortfolioSiteContent: PortfolioSiteContent = {
         ],
       },
     ],
+  },
+  testimonials: {
+    eyebrow: "Testimonials",
+    title: "What people say.",
+    items: [],
   },
   contact: {
     eyebrow: "Get in touch",
@@ -211,7 +258,14 @@ export const normalizePortfolioSiteContent = (
   const heroSource = isRecord(source.hero) ? source.hero : {};
   const aboutSource = isRecord(source.about) ? source.about : {};
   const journeySource = isRecord(source.journey) ? source.journey : {};
+  const experienceSource = isRecord(source.experience) ? source.experience : {};
+  const certificationsSource = isRecord(source.certifications)
+    ? source.certifications
+    : {};
   const skillsSource = isRecord(source.skills) ? source.skills : {};
+  const testimonialsSource = isRecord(source.testimonials)
+    ? source.testimonials
+    : {};
   const contactSource = isRecord(source.contact) ? source.contact : {};
   const footerSource = isRecord(source.footer) ? source.footer : {};
 
@@ -260,6 +314,41 @@ export const normalizePortfolioSiteContent = (
           })
         : defaultPortfolioSiteContent.journey.items,
     },
+    experience: {
+      ...defaultPortfolioSiteContent.experience,
+      ...experienceSource,
+      items: Array.isArray(experienceSource.items)
+        ? experienceSource.items.flatMap((item) => {
+            if (!isRecord(item)) return [];
+            return [{
+              period: typeof item.period === "string" ? item.period : "",
+              role: typeof item.role === "string" ? item.role : "",
+              organization:
+                typeof item.organization === "string" ? item.organization : "",
+              location: typeof item.location === "string" ? item.location : "",
+              description:
+                typeof item.description === "string" ? item.description : "",
+              highlights: asStringArray(item.highlights, []),
+            }];
+          })
+        : defaultPortfolioSiteContent.experience.items,
+    },
+    certifications: {
+      ...defaultPortfolioSiteContent.certifications,
+      ...certificationsSource,
+      items: Array.isArray(certificationsSource.items)
+        ? certificationsSource.items.flatMap((item) => {
+            if (!isRecord(item)) return [];
+            return [{
+              name: typeof item.name === "string" ? item.name : "",
+              issuer: typeof item.issuer === "string" ? item.issuer : "",
+              date: typeof item.date === "string" ? item.date : "",
+              credentialUrl:
+                typeof item.credentialUrl === "string" ? item.credentialUrl : "",
+            }];
+          })
+        : defaultPortfolioSiteContent.certifications.items,
+    },
     skills: {
       ...defaultPortfolioSiteContent.skills,
       ...skillsSource,
@@ -276,6 +365,22 @@ export const normalizePortfolioSiteContent = (
             };
           })
         : defaultPortfolioSiteContent.skills.categories,
+    },
+    testimonials: {
+      ...defaultPortfolioSiteContent.testimonials,
+      ...testimonialsSource,
+      items: Array.isArray(testimonialsSource.items)
+        ? testimonialsSource.items.flatMap((item) => {
+            if (!isRecord(item)) return [];
+            return [{
+              quote: typeof item.quote === "string" ? item.quote : "",
+              name: typeof item.name === "string" ? item.name : "",
+              role: typeof item.role === "string" ? item.role : "",
+              organization:
+                typeof item.organization === "string" ? item.organization : "",
+            }];
+          })
+        : defaultPortfolioSiteContent.testimonials.items,
     },
     contact: {
       ...defaultPortfolioSiteContent.contact,

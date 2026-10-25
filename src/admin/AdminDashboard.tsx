@@ -30,6 +30,7 @@ import {
   deletePortfolioProject,
   loadAdminProjects,
   savePortfolioProject,
+  uploadProjectMedia,
   type PortfolioProject,
 } from "@/data/projects";
 import { supabase } from "@/data/supabase";
@@ -224,11 +225,19 @@ export const AdminDashboard = () => {
     setPage("projects");
   };
 
-  const saveProject = (draft: ProjectDraft) => {
-    const project: PortfolioProject = {
+  const saveProject = async (draft: ProjectDraft, mediaFile?: File) => {
+    let project: PortfolioProject = {
       ...draft,
       id: draft.id ?? createProjectId(),
     };
+    if (mediaFile) {
+      const mediaSrc = await uploadProjectMedia(mediaFile, project.id);
+      project = {
+        ...project,
+        mediaSrc,
+        mediaType: mediaFile.type.startsWith("video/") ? "video" : "image",
+      };
+    }
     const existingIndex = projects.findIndex((item) => item.id === project.id);
     const sortOrder = existingIndex < 0 ? 0 : existingIndex;
     void persistProject(
@@ -1127,22 +1136,24 @@ const ProjectsPage = ({
 type ProjectEditorProps = {
   initial: ProjectDraft;
   onCancel: () => void;
-  onSave: (project: ProjectDraft) => void;
+  onSave: (project: ProjectDraft, mediaFile?: File) => Promise<void> | void;
 };
 
 const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [mediaFile, setMediaFile] = useState<File | undefined>();
+  const [mediaType, setMediaType] = useState(initial.mediaType);
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
     const title = String(data.get("title") ?? "").trim();
     const category = String(data.get("category") ?? "").trim();
     const description = String(data.get("description") ?? "").trim();
-    const mediaSrc = String(data.get("mediaSrc") ?? "").trim();
     const imageAlt = String(data.get("imageAlt") ?? "").trim();
-    const mediaType = String(data.get("mediaType") ?? "placeholder") as
+    const selectedMediaType = String(data.get("mediaType") ?? "placeholder") as
       | "image"
       | "video"
       | "placeholder";
@@ -1151,8 +1162,18 @@ const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
       .map((skill) => skill.trim())
       .filter(Boolean);
 
-    if ((mediaType === "image" || mediaType === "video") && !mediaSrc) {
-      setError("Add a media URL or choose the placeholder option.");
+    const selectedMedia = data.get("mediaFile");
+    const selectedFile =
+      selectedMedia instanceof File && selectedMedia.size > 0
+        ? selectedMedia
+        : undefined;
+    const hasExistingMedia = Boolean(initial.mediaSrc);
+    if (
+      (selectedMediaType === "image" || selectedMediaType === "video") &&
+      !selectedFile &&
+      !hasExistingMedia
+    ) {
+      setError("Choose a file or select the placeholder option.");
       return;
     }
 
@@ -1161,15 +1182,28 @@ const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
       title,
       category,
       description,
-      mediaType,
+      mediaType: selectedMediaType,
       imageAlt: imageAlt || title,
       skills,
       published: data.get("published") === "on",
-      mediaSrc: mediaSrc || undefined,
+      mediaSrc: selectedMediaType === "placeholder" ? undefined : initial.mediaSrc,
       live: String(data.get("live") ?? "").trim() || undefined,
       github: String(data.get("github") ?? "").trim() || undefined,
     };
-    onSave(draft);
+    setSaving(true);
+    setError("");
+    try {
+      await onSave(
+        draft,
+        selectedMediaType === "placeholder" ? undefined : selectedFile,
+      );
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error ? saveError.message : "Could not upload project media.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -1229,7 +1263,13 @@ const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
             Media type
             <select
               name="mediaType"
-              defaultValue={initial.mediaType}
+              value={mediaType}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === "image" || value === "video" || value === "placeholder") {
+                  setMediaType(value);
+                }
+              }}
               className={inputClass}
             >
               <option value="placeholder">Designed placeholder</option>
@@ -1238,14 +1278,27 @@ const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
             </select>
           </label>
           <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
-            Media URL
+            Upload project media
             <input
-              name="mediaSrc"
-              type="url"
-              defaultValue={initial.mediaSrc}
-              placeholder="https://..."
+              name="mediaFile"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif,video/mp4,video/webm"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                setMediaFile(file);
+                if (file) {
+                  setMediaType(file.type.startsWith("video/") ? "video" : "image");
+                }
+              }}
               className={inputClass}
             />
+            <span className="font-normal text-slate-400">
+              {mediaFile
+                ? `Selected: ${mediaFile.name}`
+                : initial.mediaSrc
+                  ? "Choose a file to replace the current preview."
+                  : "Images up to 10 MB; videos up to 50 MB."}
+            </span>
           </label>
           <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
             Image description
@@ -1321,9 +1374,11 @@ const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
           </button>
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60"
           >
-            <Check size={15} /> Save project
+            {saving ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={15} />}
+            {saving ? "Uploading and saving..." : "Save project"}
           </button>
         </div>
       </form>
@@ -1382,6 +1437,158 @@ const SiteContentEditor = ({
         items: current.journey.items.map((item, itemIndex) =>
           itemIndex === index ? { ...item, [field]: value } : item,
         ),
+      },
+    }));
+  };
+
+  const addJourneyItem = () => {
+    setDraft((current) => ({
+      ...current,
+      journey: {
+        ...current.journey,
+        items: [...current.journey.items, { period: "", title: "", description: "" }],
+      },
+    }));
+  };
+
+  const removeJourneyItem = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      journey: {
+        ...current.journey,
+        items: current.journey.items.filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  };
+
+  const setExperienceItem = (
+    index: number,
+    field: "period" | "role" | "organization" | "location" | "description" | "highlights",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      experience: {
+        ...current.experience,
+        items: current.experience.items.map((item, itemIndex) =>
+          itemIndex === index
+            ? {
+                ...item,
+                [field]:
+                  field === "highlights"
+                    ? value.split("\n").map((line) => line.trim()).filter(Boolean)
+                    : value,
+              }
+            : item,
+        ),
+      },
+    }));
+  };
+
+  const addExperienceItem = () => {
+    setDraft((current) => ({
+      ...current,
+      experience: {
+        ...current.experience,
+        items: [
+          ...current.experience.items,
+          {
+            period: "",
+            role: "",
+            organization: "",
+            location: "",
+            description: "",
+            highlights: [],
+          },
+        ],
+      },
+    }));
+  };
+
+  const removeExperienceItem = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      experience: {
+        ...current.experience,
+        items: current.experience.items.filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  };
+
+  const setCertificationItem = (
+    index: number,
+    field: "name" | "issuer" | "date" | "credentialUrl",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      certifications: {
+        ...current.certifications,
+        items: current.certifications.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, [field]: value } : item,
+        ),
+      },
+    }));
+  };
+
+  const addCertificationItem = () => {
+    setDraft((current) => ({
+      ...current,
+      certifications: {
+        ...current.certifications,
+        items: [
+          ...current.certifications.items,
+          { name: "", issuer: "", date: "", credentialUrl: "" },
+        ],
+      },
+    }));
+  };
+
+  const removeCertificationItem = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      certifications: {
+        ...current.certifications,
+        items: current.certifications.items.filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  };
+
+  const setTestimonialItem = (
+    index: number,
+    field: "quote" | "name" | "role" | "organization",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      testimonials: {
+        ...current.testimonials,
+        items: current.testimonials.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, [field]: value } : item,
+        ),
+      },
+    }));
+  };
+
+  const addTestimonialItem = () => {
+    setDraft((current) => ({
+      ...current,
+      testimonials: {
+        ...current.testimonials,
+        items: [
+          ...current.testimonials.items,
+          { quote: "", name: "", role: "", organization: "" },
+        ],
+      },
+    }));
+  };
+
+  const removeTestimonialItem = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      testimonials: {
+        ...current.testimonials,
+        items: current.testimonials.items.filter((_, itemIndex) => itemIndex !== index),
       },
     }));
   };
@@ -1556,7 +1763,7 @@ const SiteContentEditor = ({
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
-          <h3 className="text-sm font-semibold text-slate-900">Journey section</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Background timeline</h3>
           <div className="mt-4 grid gap-4">
             <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
               Eyebrow
@@ -1586,6 +1793,15 @@ const SiteContentEditor = ({
             </label>
             {draft.journey.items.map((item, index) => (
               <div key={`${item.title}-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => removeJourneyItem(index)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 size={13} /> Remove milestone
+                  </button>
+                </div>
                 <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
                   Period
                   <input
@@ -1613,6 +1829,89 @@ const SiteContentEditor = ({
                 </label>
               </div>
             ))}
+            <button
+              type="button"
+              onClick={addJourneyItem}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Plus size={14} /> Add timeline milestone
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Work experience</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.experience.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    experience: { ...current.experience, eyebrow: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Section title
+              <input
+                value={draft.experience.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    experience: { ...current.experience, title: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.experience.items.map((item, index) => (
+              <div key={`experience-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-2">
+                <div className="flex justify-end md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => removeExperienceItem(index)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 size={13} /> Remove role
+                  </button>
+                </div>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Period
+                  <input value={item.period} onChange={(event) => setExperienceItem(index, "period", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Role
+                  <input value={item.role} onChange={(event) => setExperienceItem(index, "role", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Organization
+                  <input value={item.organization} onChange={(event) => setExperienceItem(index, "organization", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Location
+                  <input value={item.location} onChange={(event) => setExperienceItem(index, "location", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Description
+                  <textarea rows={3} value={item.description} onChange={(event) => setExperienceItem(index, "description", event.target.value)} className={`${inputClass} resize-y`} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Highlights (one per line)
+                  <textarea rows={3} value={item.highlights.join("\n")} onChange={(event) => setExperienceItem(index, "highlights", event.target.value)} className={`${inputClass} resize-y`} />
+                </label>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addExperienceItem}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Plus size={14} /> Add work experience
+            </button>
           </div>
         </div>
 
@@ -1666,6 +1965,142 @@ const SiteContentEditor = ({
                 </label>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Certifications</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.certifications.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    certifications: { ...current.certifications, eyebrow: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Section title
+              <input
+                value={draft.certifications.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    certifications: { ...current.certifications, title: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.certifications.items.map((item, index) => (
+              <div key={`certification-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-2">
+                <div className="flex justify-end md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => removeCertificationItem(index)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 size={13} /> Remove certificate
+                  </button>
+                </div>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Certificate name
+                  <input value={item.name} onChange={(event) => setCertificationItem(index, "name", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Issuer
+                  <input value={item.issuer} onChange={(event) => setCertificationItem(index, "issuer", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Date
+                  <input value={item.date} onChange={(event) => setCertificationItem(index, "date", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Credential URL (optional)
+                  <input value={item.credentialUrl} onChange={(event) => setCertificationItem(index, "credentialUrl", event.target.value)} className={inputClass} />
+                </label>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addCertificationItem}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Plus size={14} /> Add certification
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Testimonials</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.testimonials.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    testimonials: { ...current.testimonials, eyebrow: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Section title
+              <input
+                value={draft.testimonials.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    testimonials: { ...current.testimonials, title: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.testimonials.items.map((item, index) => (
+              <div key={`testimonial-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-2">
+                <div className="flex justify-end md:col-span-2">
+                  <button
+                    type="button"
+                    onClick={() => removeTestimonialItem(index)}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 size={13} /> Remove testimonial
+                  </button>
+                </div>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Quote
+                  <textarea rows={3} value={item.quote} onChange={(event) => setTestimonialItem(index, "quote", event.target.value)} className={`${inputClass} resize-y`} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Name
+                  <input value={item.name} onChange={(event) => setTestimonialItem(index, "name", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Role
+                  <input value={item.role} onChange={(event) => setTestimonialItem(index, "role", event.target.value)} className={inputClass} />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Organization (optional)
+                  <input value={item.organization} onChange={(event) => setTestimonialItem(index, "organization", event.target.value)} className={inputClass} />
+                </label>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addTestimonialItem}
+              className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              <Plus size={14} /> Add testimonial
+            </button>
           </div>
         </div>
 

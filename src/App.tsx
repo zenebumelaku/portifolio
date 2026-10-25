@@ -8,6 +8,11 @@ import { ContactSection } from "@/sections/ContactSection";
 import { JourneySection } from "@/sections/JourneySection";
 import { Footer } from "@/sections/Footer";
 import { usePortfolioSiteContent } from "@/data/site-content";
+import {
+  CertificationsSection,
+  ExperienceSection,
+  TestimonialsSection,
+} from "@/sections/ProfileSections";
 
 const AdminDashboard = lazy(() =>
   import("@/admin/AdminDashboard").then((module) => ({
@@ -36,8 +41,11 @@ const PortfolioSite = () => {
           <HeroSection content={content.hero} />
           <AboutSection content={content.about} />
           <JourneySection content={content.journey} />
+          <ExperienceSection content={content.experience} />
           <SkillsSection content={content.skills} />
+          <CertificationsSection content={content.certifications} />
           <ProjectsSection />
+          <TestimonialsSection content={content.testimonials} />
           <ContactSection content={content.contact} />
         </main>
         <Footer content={content.footer} />

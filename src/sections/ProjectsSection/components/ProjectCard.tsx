@@ -17,19 +17,19 @@ export type ProjectCardProps = {
 export const ProjectCard = (props: ProjectCardProps) => {
   return (
     <motion.article
-      className="group overflow-hidden rounded-2xl border-2 border-slate-900 bg-white transition hover:shadow-xl dark:border-slate-700 dark:bg-slate-900"
+      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-xl dark:border-slate-700 dark:bg-slate-900 md:grid md:grid-cols-[1.15fr_1fr]"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: false, amount: 0.15 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       whileHover={{ y: -4 }}
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 dark:bg-slate-800">
+      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800 md:aspect-auto md:min-h-[360px]">
         {props.mediaType === "image" && props.mediaSrc ? (
           <img
             src={props.mediaSrc}
             alt={props.imageAlt}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           />
         ) : props.mediaType === "video" && props.mediaSrc ? (
           <video
@@ -39,10 +39,10 @@ export const ProjectCard = (props: ProjectCardProps) => {
             muted
             playsInline
             preload="metadata"
-            className="h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full items-end bg-[radial-gradient(circle_at_70%_25%,rgba(17,24,39,.18),transparent_35%),linear-gradient(135deg,#f3f4f6,#e5e7eb)] p-5 dark:bg-[radial-gradient(circle_at_70%_25%,rgba(96,165,250,.20),transparent_35%),linear-gradient(135deg,#0f172a,#1e293b)]">
+          <div className="absolute inset-0 flex items-end bg-[radial-gradient(circle_at_70%_25%,rgba(17,24,39,.18),transparent_35%),linear-gradient(135deg,#f3f4f6,#e5e7eb)] p-5 dark:bg-[radial-gradient(circle_at_70%_25%,rgba(96,165,250,.20),transparent_35%),linear-gradient(135deg,#0f172a,#1e293b)]">
             <div className="w-full rounded-xl border border-slate-200 bg-white/75 p-4 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
               <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                 {props.title}
@@ -55,7 +55,7 @@ export const ProjectCard = (props: ProjectCardProps) => {
       </div>
 
       {props.screenshots && props.screenshots.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60 md:col-span-2">
           {props.screenshots.map((screenshot) => (
             <img
               key={screenshot.src}
@@ -67,29 +67,29 @@ export const ProjectCard = (props: ProjectCardProps) => {
         </div>
       )}
 
-      <div className="p-5 md:p-6">
-        <span className="text-xs font-semibold uppercase tracking-[.15em] text-slate-500 dark:text-slate-400">
+      <div className="flex flex-col justify-center p-6 md:p-9 lg:p-10">
+        <span className="text-xs font-semibold uppercase tracking-[.15em] text-indigo-700 dark:text-indigo-300">
           {props.category}
         </span>
-        <h3 className="mt-2 text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        <h3 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-3xl">
           {props.title}
         </h3>
-        <p className="mt-3 min-h-[72px] text-sm leading-6 text-slate-600 dark:text-slate-300">
+        <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
           {props.description}
         </p>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2">
           {props.skills.map((skill) => (
             <span
               key={skill}
-              className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
               {skill}
             </span>
           ))}
         </div>
 
-        <div className="mt-5 flex gap-2">
+        <div className="mt-6 flex flex-wrap gap-2">
           {props.live && (
             <a
               href={props.live}
