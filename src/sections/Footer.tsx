@@ -1,11 +1,19 @@
 import { Github, Linkedin, Send } from "lucide-react";
+import {
+  defaultPortfolioSiteContent,
+  type PortfolioSiteContent,
+} from "@/data/site-content";
 
-export const Footer = () => {
+export const Footer = ({
+  content = defaultPortfolioSiteContent.footer,
+}: {
+  content?: PortfolioSiteContent["footer"];
+}) => {
   return (
     <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-5 py-8 md:flex-row md:items-center md:justify-between md:px-8">
         <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-          ZENEBU MELAKU
+          {content.name}
         </p>
         <div className="flex items-center gap-4">
           <a
@@ -37,7 +45,7 @@ export const Footer = () => {
           </a>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          Full-Stack Developer · Growing toward AI Engineering
+          {content.tagline}
         </p>
       </div>
     </footer>

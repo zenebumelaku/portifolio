@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
+import {
+  defaultPortfolioSiteContent,
+  type PortfolioSiteContent,
+} from "@/data/site-content";
 
-export const JourneySection = () => {
+export const JourneySection = ({
+  content = defaultPortfolioSiteContent.journey,
+}: {
+  content?: PortfolioSiteContent["journey"];
+}) => {
   return (
     <section
       id="journey"
@@ -13,59 +21,29 @@ export const JourneySection = () => {
         viewport={{ once: false, amount: 0.15 }}
         transition={{ duration: 0.65, ease: "easeOut" }}
       >
-        <p className="eyebrow">The journey</p>
+        <p className="eyebrow">{content.eyebrow}</p>
         <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-5xl">
-          Building from the ground up.
+          {content.title}
         </h2>
         <div className="mt-10 grid gap-8 md:grid-cols-3">
-          <motion.div
-            className="rounded-xl border-2 border-slate-900 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-              Now
-            </p>
-            <h3 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">
-              Full-Stack Developer
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Creating complete digital products across interfaces, APIs,
-              databases, and application architecture.
-            </p>
-          </motion.div>
-          <motion.div
-            className="rounded-xl border-2 border-slate-900 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-              Grounding
-            </p>
-            <h3 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">
-              Software Engineering Student
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Studying Software Engineering at Addis Ababa University as a
-              third-year student.
-            </p>
-          </motion.div>
-          <motion.div
-            className="rounded-xl border-2 border-slate-900 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
-            whileHover={{ y: -4 }}
-            transition={{ duration: 0.2 }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-              Next
-            </p>
-            <h3 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">
-              AI Engineer
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-              Growing toward intelligent systems through machine learning, data
-              engineering, and AI experimentation.
-            </p>
-          </motion.div>
+          {content.items.map((item, index) => (
+            <motion.div
+              key={`${item.title}-${index}`}
+              className="rounded-xl border-2 border-slate-900 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                {item.period}
+              </p>
+              <h3 className="mt-3 text-xl font-bold text-slate-900 dark:text-slate-50">
+                {item.title}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                {item.description}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </motion.div>
     </section>

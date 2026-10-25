@@ -34,8 +34,15 @@ import {
 } from "@/data/projects";
 import { supabase } from "@/data/supabase";
 import { supabaseConfigured } from "@/data/supabase-config";
+import {
+  defaultPortfolioSiteContent,
+  loadAdminPortfolioContent,
+  normalizePortfolioSiteContent,
+  savePortfolioContent,
+  type PortfolioSiteContent,
+} from "@/data/site-content";
 
-type AdminPage = "overview" | "projects";
+type AdminPage = "overview" | "projects" | "site-content";
 type ProjectDraft = Omit<PortfolioProject, "id"> & { id?: string };
 
 const blankProject: ProjectDraft = {
@@ -60,6 +67,7 @@ export const AdminDashboard = () => {
   const [page, setPage] = useState<AdminPage>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [projects, setProjects] = useState<PortfolioProject[]>([]);
+  const [siteContent, setSiteContent] = useState<PortfolioSiteContent>(defaultPortfolioSiteContent);
   const [storageError, setStorageError] = useState("");
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<ProjectDraft | null>(null);
@@ -148,17 +156,21 @@ export const AdminDashboard = () => {
 
     let active = true;
     setProjectsLoading(true);
-    loadAdminProjects()
-      .then((loadedProjects) => {
+    Promise.all([
+      loadAdminProjects(),
+      loadAdminPortfolioContent(),
+    ])
+      .then(([loadedProjects, loadedContent]) => {
         if (!active) return;
         setProjects(loadedProjects);
+        setSiteContent(loadedContent);
         setStorageError("");
         setProjectsLoading(false);
       })
       .catch((error: unknown) => {
         if (!active) return;
         setStorageError(
-          error instanceof Error ? error.message : "Could not load projects.",
+          error instanceof Error ? error.message : "Could not load dashboard data.",
         );
         setProjectsLoading(false);
       });
@@ -265,7 +277,9 @@ export const AdminDashboard = () => {
       : "Add project"
     : page === "overview"
       ? "Overview"
-      : "Projects";
+      : page === "site-content"
+        ? "Site content"
+        : "Projects";
 
   if (!supabaseConfigured || !supabase) {
     return <AdminSetupNotice />;
@@ -341,6 +355,12 @@ export const AdminDashboard = () => {
             label="Projects"
             count={projects.length}
             onClick={() => navigate("projects")}
+          />
+          <SidebarLink
+            active={page === "site-content"}
+            icon={<Settings2 size={17} />}
+            label="Site content"
+            onClick={() => navigate("site-content")}
           />
         </nav>
 
@@ -458,6 +478,25 @@ export const AdminDashboard = () => {
               onManageProjects={() => navigate("projects")}
               onAddProject={startNewProject}
               onTogglePublished={togglePublished}
+              onManageSiteContent={() => navigate("site-content")}
+            />
+          ) : page === "site-content" ? (
+            <SiteContentEditor
+              initial={siteContent}
+              onCancel={() => navigate("overview")}
+              onSave={async (nextContent) => {
+                try {
+                  await savePortfolioContent(nextContent);
+                  setSiteContent(nextContent);
+                  setNotice("Site content saved.");
+                  setStorageError("");
+                  setPage("overview");
+                } catch (error: unknown) {
+                  setStorageError(
+                    error instanceof Error ? error.message : "Could not save site content.",
+                  );
+                }
+              }}
             />
           ) : (
             <ProjectsPage
@@ -698,6 +737,7 @@ type OverviewProps = {
   categoriesCount: number;
   draftCount: number;
   onManageProjects: () => void;
+  onManageSiteContent: () => void;
   onAddProject: () => void;
   onTogglePublished: (project: PortfolioProject) => void;
 };
@@ -708,6 +748,7 @@ const Overview = ({
   categoriesCount,
   draftCount,
   onManageProjects,
+  onManageSiteContent,
   onAddProject,
   onTogglePublished,
 }: OverviewProps) => (
@@ -837,6 +878,12 @@ const Overview = ({
             title="Manage projects"
             description="Edit, publish, or remove work"
             onClick={onManageProjects}
+          />
+          <QuickAction
+            icon={<Settings2 size={16} />}
+            title="Edit site content"
+            description="Update about, skills, and contact copy"
+            onClick={onManageSiteContent}
           />
           <a
             href="/"
@@ -1277,6 +1324,498 @@ const ProjectEditor = ({ initial, onCancel, onSave }: ProjectEditorProps) => {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700"
           >
             <Check size={15} /> Save project
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+};
+
+const SiteContentEditor = ({
+  initial,
+  onCancel,
+  onSave,
+}: {
+  initial: PortfolioSiteContent;
+  onCancel: () => void;
+  onSave: (nextContent: PortfolioSiteContent) => Promise<void> | void;
+}) => {
+  const [draft, setDraft] = useState<PortfolioSiteContent>(() =>
+    normalizePortfolioSiteContent(initial),
+  );
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setDraft(normalizePortfolioSiteContent(initial));
+  }, [initial]);
+
+  const setHeroField = (field: keyof PortfolioSiteContent["hero"], value: string) => {
+    setDraft((current) => ({
+      ...current,
+      hero: { ...current.hero, [field]: value },
+    }));
+  };
+
+  const setAboutParagraphs = (value: string) => {
+    setDraft((current) => ({
+      ...current,
+      about: {
+        ...current.about,
+        paragraphs: value
+          .split(/\n{2,}/)
+          .map((paragraph) => paragraph.trim())
+          .filter(Boolean),
+      },
+    }));
+  };
+
+  const setJourneyItem = (
+    index: number,
+    field: "period" | "title" | "description",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      journey: {
+        ...current.journey,
+        items: current.journey.items.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, [field]: value } : item,
+        ),
+      },
+    }));
+  };
+
+  const setSkillsCategory = (
+    index: number,
+    field: "title" | "skills",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      skills: {
+        ...current.skills,
+        categories: current.skills.categories.map((category, categoryIndex) =>
+          categoryIndex === index
+            ? {
+                ...category,
+                [field]: field === "skills" ? value.split(",").map((skill) => skill.trim()).filter(Boolean) : value,
+              }
+            : category,
+        ),
+      },
+    }));
+  };
+
+  const setContactCard = (
+    index: number,
+    field: "title" | "value" | "href" | "iconLabel",
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      contact: {
+        ...current.contact,
+        cards: current.contact.cards.map((card, cardIndex) =>
+          cardIndex === index ? { ...card, [field]: value } : card,
+        ),
+      },
+    }));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+
+    try {
+      await onSave(normalizePortfolioSiteContent(draft));
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : "Could not save site content.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="space-y-5">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-xs font-medium text-slate-500">
+            Update the copy that appears across your public portfolio.
+          </p>
+          <p className="mt-2 text-[11px] text-slate-400">
+            Changes save to the shared site-content model used by the public pages.
+          </p>
+        </div>
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 md:p-8"
+      >
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Hero section</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.hero.eyebrow}
+                onChange={(event) => setHeroField("eyebrow", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Primary CTA
+              <input
+                value={draft.hero.primaryCta}
+                onChange={(event) => setHeroField("primaryCta", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700 md:col-span-2">
+              Headline
+              <input
+                value={draft.hero.headline}
+                onChange={(event) => setHeroField("headline", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Accent text
+              <input
+                value={draft.hero.accentText}
+                onChange={(event) => setHeroField("accentText", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Secondary CTA label
+              <input
+                value={draft.hero.secondaryCta}
+                onChange={(event) => setHeroField("secondaryCta", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700 md:col-span-2">
+              Subtitle
+              <textarea
+                rows={3}
+                value={draft.hero.subtitle}
+                onChange={(event) => setHeroField("subtitle", event.target.value)}
+                className={`${inputClass} resize-y`}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              GitHub URL
+              <input
+                value={draft.hero.github}
+                onChange={(event) => setHeroField("github", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              LinkedIn URL
+              <input
+                value={draft.hero.linkedin}
+                onChange={(event) => setHeroField("linkedin", event.target.value)}
+                className={inputClass}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">About section</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Heading
+              <input
+                value={draft.about.heading}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    about: { ...current.about, heading: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Paragraphs
+              <textarea
+                rows={6}
+                value={draft.about.paragraphs.join("\n\n")}
+                onChange={(event) => setAboutParagraphs(event.target.value)}
+                className={`${inputClass} resize-y`}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Journey section</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.journey.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    journey: { ...current.journey, eyebrow: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Title
+              <input
+                value={draft.journey.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    journey: { ...current.journey, title: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.journey.items.map((item, index) => (
+              <div key={`${item.title}-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Period
+                  <input
+                    value={item.period}
+                    onChange={(event) => setJourneyItem(index, "period", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Title
+                  <input
+                    value={item.title}
+                    onChange={(event) => setJourneyItem(index, "title", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Description
+                  <textarea
+                    rows={3}
+                    value={item.description}
+                    onChange={(event) => setJourneyItem(index, "description", event.target.value)}
+                    className={`${inputClass} resize-y`}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Skills section</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.skills.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    skills: { ...current.skills, eyebrow: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Title
+              <input
+                value={draft.skills.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    skills: { ...current.skills, title: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.skills.categories.map((category, index) => (
+              <div key={`${category.title}-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3">
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Category title
+                  <input
+                    value={category.title}
+                    onChange={(event) => setSkillsCategory(index, "title", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Skills (comma separated)
+                  <textarea
+                    rows={3}
+                    value={category.skills.join(", ")}
+                    onChange={(event) => setSkillsCategory(index, "skills", event.target.value)}
+                    className={`${inputClass} resize-y`}
+                  />
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Contact section</h3>
+          <div className="mt-4 grid gap-4">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Eyebrow
+              <input
+                value={draft.contact.eyebrow}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    contact: { ...current.contact, eyebrow: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Title
+              <input
+                value={draft.contact.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    contact: { ...current.contact, title: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            {draft.contact.cards.map((card, index) => (
+              <div key={`${card.title}-${index}`} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-3 md:grid-cols-2">
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Title
+                  <input
+                    value={card.title}
+                    onChange={(event) => setContactCard(index, "title", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700">
+                  Value
+                  <input
+                    value={card.value}
+                    onChange={(event) => setContactCard(index, "value", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  URL
+                  <input
+                    value={card.href}
+                    onChange={(event) => setContactCard(index, "href", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+                <label className="grid gap-1.5 text-[11px] font-semibold text-slate-700 md:col-span-2">
+                  Icon label
+                  <input
+                    value={card.iconLabel}
+                    onChange={(event) => setContactCard(index, "iconLabel", event.target.value)}
+                    className={inputClass}
+                  />
+                </label>
+              </div>
+            ))}
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Location label
+              <input
+                value={draft.contact.locationLabel}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    contact: { ...current.contact, locationLabel: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Location value
+              <input
+                value={draft.contact.locationValue}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    contact: { ...current.contact, locationValue: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <h3 className="text-sm font-semibold text-slate-900">Footer</h3>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Name
+              <input
+                value={draft.footer.name}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    footer: { ...current.footer, name: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+              Tagline
+              <input
+                value={draft.footer.tagline}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    footer: { ...current.footer, tagline: event.target.value },
+                  }))
+                }
+                className={inputClass}
+              />
+            </label>
+          </div>
+        </div>
+
+        {error && (
+          <p role="alert" className="text-xs font-medium text-red-600">
+            {error}
+          </p>
+        )}
+
+        <div className="flex flex-col-reverse justify-end gap-2 border-t border-slate-100 pt-5 sm:flex-row">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60"
+          >
+            {saving ? <LoaderCircle size={15} className="animate-spin" /> : <Check size={15} />}
+            {saving ? "Saving..." : "Save site content"}
           </button>
         </div>
       </form>

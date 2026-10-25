@@ -2,11 +2,19 @@ import { MapPin } from "lucide-react";
 import { ContactCard } from "@/sections/ContactSection/components/ContactCard";
 import { ContactForm } from "@/sections/ContactSection/components/ContactForm";
 import { motion } from "framer-motion";
+import {
+  defaultPortfolioSiteContent,
+  type PortfolioSiteContent,
+} from "@/data/site-content";
 
 const icon = (name: string) =>
   `https://dummyimage.com/96x96/f5f5f5/111827&text=${encodeURIComponent(name)}`;
 
-export const ContactSection = () => {
+export const ContactSection = ({
+  content = defaultPortfolioSiteContent.contact,
+}: {
+  content?: PortfolioSiteContent["contact"];
+}) => {
   return (
     <section
       id="contact"
@@ -20,105 +28,30 @@ export const ContactSection = () => {
         transition={{ duration: 0.65, ease: "easeOut" }}
       >
         <div className="mb-12 text-center">
-          <p className="eyebrow">Get in touch</p>
+          <p className="eyebrow">{content.eyebrow}</p>
           <h2 className="mt-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50 md:text-5xl">
-            Contact Me
+            {content.title}
           </h2>
         </div>
 
         <div className="mx-auto grid w-full max-w-5xl gap-12">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.05 }}
-            >
-              <ContactCard
-                href="mailto:melakuzenebu3@gmail.com"
-                iconSrc={icon("MAIL")}
-                title="Email"
-                value="melakuzenebu3@gmail.com"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-            >
-              <ContactCard
-                href="https://github.com/zenebumelaku"
-                iconSrc={icon("GH")}
-                title="GitHub"
-                value="zenebumelaku"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.15 }}
-            >
-              <ContactCard
-                href="https://www.linkedin.com/in/zenebu-melaku-7b9331225/"
-                iconSrc={icon("IN")}
-                title="LinkedIn"
-                value="Zenebu Melaku"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-            >
-              <ContactCard
-                href="tel:0945712016"
-                iconSrc={icon("TEL")}
-                title="Phone"
-                value="0945712016"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.25 }}
-            >
-              <ContactCard
-                href="https://t.me/teninen"
-                iconSrc={icon("TG")}
-                title="Telegram"
-                value="@teninen"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-            >
-              <ContactCard
-                href="https://leetcode.com/zeni_mel"
-                iconSrc={icon("LC")}
-                title="LeetCode"
-                value="zeni_mel"
-              />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.1 }}
-              transition={{ duration: 0.4, delay: 0.35 }}
-            >
-              <ContactCard
-                href="https://t.me/zenicore"
-                iconSrc={icon("X")}
-                title="Telegram channel"
-                value="@zenicore"
-              />
-            </motion.div>
+            {content.cards.map((card, index) => (
+              <motion.div
+                key={`${card.title}-${index}`}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: false, amount: 0.1 }}
+                transition={{ duration: 0.4, delay: 0.05 * index }}
+              >
+                <ContactCard
+                  href={card.href}
+                  iconSrc={icon(card.iconLabel)}
+                  title={card.title}
+                  value={card.value}
+                />
+              </motion.div>
+            ))}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -131,10 +64,10 @@ export const ContactSection = () => {
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Location
+                  {content.locationLabel}
                 </p>
                 <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Addis Ababa, Ethiopia
+                  {content.locationValue}
                 </p>
               </div>
             </motion.div>

@@ -7,6 +7,7 @@ import { ProjectsSection } from "@/sections/ProjectsSection";
 import { ContactSection } from "@/sections/ContactSection";
 import { JourneySection } from "@/sections/JourneySection";
 import { Footer } from "@/sections/Footer";
+import { usePortfolioSiteContent } from "@/data/site-content";
 
 const AdminDashboard = lazy(() =>
   import("@/admin/AdminDashboard").then((module) => ({
@@ -16,6 +17,7 @@ const AdminDashboard = lazy(() =>
 
 const PortfolioSite = () => {
   const [darkMode, setDarkMode] = useState(false);
+  const content = usePortfolioSiteContent();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -31,14 +33,14 @@ const PortfolioSite = () => {
           onToggleDarkMode={() => setDarkMode((value) => !value)}
         />
         <main>
-          <HeroSection />
-          <AboutSection />
-          <JourneySection />
-          <SkillsSection />
+          <HeroSection content={content.hero} />
+          <AboutSection content={content.about} />
+          <JourneySection content={content.journey} />
+          <SkillsSection content={content.skills} />
           <ProjectsSection />
-          <ContactSection />
+          <ContactSection content={content.contact} />
         </main>
-        <Footer />
+        <Footer content={content.footer} />
       </div>
     </div>
   );
