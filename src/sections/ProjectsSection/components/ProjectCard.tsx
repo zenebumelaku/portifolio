@@ -17,14 +17,14 @@ export type ProjectCardProps = {
 export const ProjectCard = (props: ProjectCardProps) => {
   return (
     <motion.article
-      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-xl dark:border-slate-700 dark:bg-slate-900 md:grid md:grid-cols-[1.15fr_1fr]"
+      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-xl dark:border-slate-700 dark:bg-slate-900"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: false, amount: 0.15 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       whileHover={{ y: -4 }}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800 md:aspect-auto md:min-h-[360px]">
+      <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-800">
         {props.mediaType === "image" && props.mediaSrc ? (
           <img
             src={props.mediaSrc}
@@ -55,7 +55,7 @@ export const ProjectCard = (props: ProjectCardProps) => {
       </div>
 
       {props.screenshots && props.screenshots.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60 md:col-span-2">
+        <div className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950/60">
           {props.screenshots.map((screenshot) => (
             <img
               key={screenshot.src}

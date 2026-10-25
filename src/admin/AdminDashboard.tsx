@@ -157,24 +157,38 @@ export const AdminDashboard = () => {
 
     let active = true;
     setProjectsLoading(true);
-    Promise.all([
+    Promise.allSettled([
       loadAdminProjects(),
       loadAdminPortfolioContent(),
     ])
-      .then(([loadedProjects, loadedContent]) => {
+      .then(([projectsResult, contentResult]) => {
         if (!active) return;
-        setProjects(loadedProjects);
-        setSiteContent(loadedContent);
-        setStorageError("");
+        const errors: string[] = [];
+        if (projectsResult.status === "fulfilled") {
+          setProjects(projectsResult.value);
+        } else {
+          errors.push(
+            `Could not load projects: ${
+              projectsResult.reason instanceof Error
+                ? projectsResult.reason.message
+                : "Unknown error."
+            }`,
+          );
+        }
+        if (contentResult.status === "fulfilled") {
+          setSiteContent(contentResult.value);
+        } else {
+          errors.push(
+            `Could not load site content: ${
+              contentResult.reason instanceof Error
+                ? contentResult.reason.message
+                : "Unknown error."
+            }`,
+          );
+        }
+        setStorageError(errors.join(" "));
         setProjectsLoading(false);
       })
-      .catch((error: unknown) => {
-        if (!active) return;
-        setStorageError(
-          error instanceof Error ? error.message : "Could not load dashboard data.",
-        );
-        setProjectsLoading(false);
-      });
 
     return () => {
       active = false;
