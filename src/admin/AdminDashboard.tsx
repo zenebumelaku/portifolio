@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
   ArrowUpRight,
   ArrowUpRightFromSquare,
@@ -10,21 +10,30 @@ import {
   EyeOff,
   FolderKanban,
   LayoutDashboard,
+  LoaderCircle,
+  LockKeyhole,
+  LogOut,
+  Mail,
   Menu,
   Pencil,
   Plus,
   Search,
   Shapes,
+  Settings2,
   Sparkles,
   Trash2,
   X,
 } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
 import {
   createProjectId,
-  loadPortfolioProjects,
-  savePortfolioProjects,
+  deletePortfolioProject,
+  loadAdminProjects,
+  savePortfolioProject,
   type PortfolioProject,
 } from "@/data/projects";
+import { supabase } from "@/data/supabase";
+import { supabaseConfigured } from "@/data/supabase-config";
 
 type AdminPage = "overview" | "projects";
 type ProjectDraft = Omit<PortfolioProject, "id"> & { id?: string };
@@ -43,14 +52,121 @@ const inputClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50";
 
 export const AdminDashboard = () => {
-  const [initialLoad] = useState(loadPortfolioProjects);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [projectsLoading, setProjectsLoading] = useState(true);
   const [page, setPage] = useState<AdminPage>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [projects, setProjects] = useState(initialLoad.projects);
-  const [storageError, setStorageError] = useState(initialLoad.error ?? "");
+  const [projects, setProjects] = useState<PortfolioProject[]>([]);
+  const [storageError, setStorageError] = useState("");
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<ProjectDraft | null>(null);
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false);
+      setProjectsLoading(false);
+      return;
+    }
+
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (error) setStorageError(error.message);
+        setSession(data.session);
+        setAuthLoading(false);
+      })
+      .catch((error: unknown) => {
+        setStorageError(
+          error instanceof Error ? error.message : "Could not check your session.",
+        );
+        setAuthLoading(false);
+      });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setIsAdmin(false);
+      setProjects([]);
+      setProjectsLoading(Boolean(nextSession));
+      setAuthLoading(false);
+      setStorageError("");
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!supabase || !session) {
+      setIsAdmin(false);
+      setCheckingAccess(false);
+      setProjectsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setCheckingAccess(true);
+    supabase
+      .from("portfolio_admins")
+      .select("user_id")
+      .eq("user_id", session.user.id)
+      .maybeSingle()
+      .then(
+        ({ data, error }) => {
+          if (!active) return;
+          if (error) {
+            setStorageError(`Could not verify admin access: ${error.message}`);
+            setIsAdmin(false);
+          } else {
+            setIsAdmin(Boolean(data));
+          }
+          setCheckingAccess(false);
+        },
+        (error: unknown) => {
+          if (!active) return;
+          setStorageError(
+            error instanceof Error
+              ? `Could not verify admin access: ${error.message}`
+              : "Could not verify admin access.",
+          );
+          setIsAdmin(false);
+          setCheckingAccess(false);
+        },
+      );
+
+    return () => {
+      active = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (!supabase || !isAdmin) return;
+
+    let active = true;
+    setProjectsLoading(true);
+    loadAdminProjects()
+      .then((loadedProjects) => {
+        if (!active) return;
+        setProjects(loadedProjects);
+        setStorageError("");
+        setProjectsLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setStorageError(
+          error instanceof Error ? error.message : "Could not load projects.",
+        );
+        setProjectsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isAdmin]);
 
   const publishedCount = projects.filter((project) => project.published).length;
   const categoriesCount = new Set(projects.map((project) => project.category)).size;
@@ -65,19 +181,28 @@ export const AdminDashboard = () => {
         .toLowerCase()
         .includes(query),
     );
-  }, [projects, search]);
+  }, [projects, search]  );
 
-  const commitProjects = (nextProjects: PortfolioProject[], message: string) => {
+  const persistProject = async (
+    project: PortfolioProject,
+    sortOrder: number,
+    message: string,
+  ) => {
     try {
-      savePortfolioProjects(nextProjects);
-      setProjects(nextProjects);
+      await savePortfolioProject(project, sortOrder);
+      setProjects((current) => {
+        const exists = current.some((item) => item.id === project.id);
+        return exists
+          ? current.map((item) => (item.id === project.id ? project : item))
+          : [project, ...current];
+      });
       setStorageError("");
       setNotice(message);
       setEditor(null);
-    } catch (error) {
-      const reason =
-        error instanceof Error ? error.message : "Unknown storage error";
-      setStorageError(`Changes could not be saved in this browser: ${reason}`);
+    } catch (error: unknown) {
+      setStorageError(
+        error instanceof Error ? error.message : "Could not save the project.",
+      );
     }
   };
 
@@ -92,19 +217,20 @@ export const AdminDashboard = () => {
       ...draft,
       id: draft.id ?? createProjectId(),
     };
-    const exists = projects.some((item) => item.id === project.id);
-    const nextProjects = exists
-      ? projects.map((item) => (item.id === project.id ? project : item))
-      : [project, ...projects];
-    commitProjects(nextProjects, exists ? "Project changes saved." : "Project added.");
+    const existingIndex = projects.findIndex((item) => item.id === project.id);
+    const sortOrder = existingIndex < 0 ? 0 : existingIndex;
+    void persistProject(
+      project,
+      sortOrder,
+      existingIndex < 0 ? "Project added." : "Project changes saved.",
+    );
   };
 
   const togglePublished = (project: PortfolioProject) => {
-    const nextProjects = projects.map((item) =>
-      item.id === project.id ? { ...item, published: !item.published } : item,
-    );
-    commitProjects(
-      nextProjects,
+    const updatedProject = { ...project, published: !project.published };
+    void persistProject(
+      updatedProject,
+      projects.findIndex((item) => item.id === project.id),
       project.published ? "Project moved to drafts." : "Project published.",
     );
   };
@@ -113,10 +239,17 @@ export const AdminDashboard = () => {
     if (!window.confirm(`Delete "${project.title}"? This cannot be undone.`)) {
       return;
     }
-    commitProjects(
-      projects.filter((item) => item.id !== project.id),
-      "Project deleted.",
-    );
+    void deletePortfolioProject(project.id)
+      .then(() => {
+        setProjects((current) => current.filter((item) => item.id !== project.id));
+        setNotice("Project deleted.");
+        setStorageError("");
+      })
+      .catch((error: unknown) => {
+        setStorageError(
+          error instanceof Error ? error.message : "Could not delete the project.",
+        );
+      });
   };
 
   const navigate = (nextPage: AdminPage) => {
@@ -133,6 +266,33 @@ export const AdminDashboard = () => {
     : page === "overview"
       ? "Overview"
       : "Projects";
+
+  if (!supabaseConfigured || !supabase) {
+    return <AdminSetupNotice />;
+  }
+
+  if (authLoading || checkingAccess || (session && isAdmin && projectsLoading)) {
+    return <AdminLoading />;
+  }
+
+  if (!session) {
+    return (
+      <AdminLogin
+        error={storageError}
+        onError={setStorageError}
+      />
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <AdminAccessDenied
+        email={session.user.email ?? "Signed-in user"}
+        error={storageError}
+      onSignOut={() => void supabase?.auth.signOut()}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-slate-900">
@@ -191,7 +351,7 @@ export const AdminDashboard = () => {
               Need a hand?
             </div>
             <p className="mt-2 text-[11px] leading-5 text-slate-400">
-              Project edits are saved to this browser and appear on your public
+              Project edits are stored securely and shared with your public
               portfolio.
             </p>
             <a
@@ -202,8 +362,8 @@ export const AdminDashboard = () => {
             </a>
           </div>
           <div className="mt-5 flex items-center gap-2 px-3 py-2 text-[10px] font-medium text-slate-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-            Local preview · no sign-in
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            Authenticated admin
           </div>
         </div>
       </aside>
@@ -239,8 +399,20 @@ export const AdminDashboard = () => {
               <ArrowUpRightFromSquare size={13} />
             </a>
             <div className="hidden h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 sm:flex">
-              ZM
+              {(session.user.email ?? "ZM")
+                .split("@")[0]
+                .slice(0, 2)
+                .toUpperCase()}
             </div>
+            <button
+              type="button"
+              title="Sign out"
+              aria-label="Sign out"
+              onClick={() => void supabase?.auth.signOut()}
+              className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </header>
 
@@ -303,13 +475,184 @@ export const AdminDashboard = () => {
           )}
         </main>
         <footer className="px-5 pb-7 text-center text-[11px] text-slate-400 md:px-9">
-          Portfolio Studio <span className="px-1">·</span> Changes are stored
-          locally in this browser
+          Portfolio Studio <span className="px-1">·</span> Changes are shared
+          with your published portfolio
         </footer>
       </div>
     </div>
   );
 };
+
+const AdminLoading = () => (
+  <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa] text-sm text-slate-500">
+    <span className="inline-flex items-center gap-2">
+      <LoaderCircle size={17} className="animate-spin text-indigo-600" />
+      Checking secure admin access…
+    </span>
+  </div>
+);
+
+const AdminSetupNotice = () => (
+  <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa] p-5">
+    <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+        <Settings2 size={20} />
+      </span>
+      <h1 className="mt-5 text-xl font-semibold text-slate-900">
+        Connect your Supabase project
+      </h1>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        Add <code>VITE_SUPABASE_URL</code> and{" "}
+        <code>VITE_SUPABASE_ANON_KEY</code> to your local environment and Vercel
+        project settings, then redeploy.
+      </p>
+      <a
+        href="/"
+        className="mt-5 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+      >
+        Return to portfolio
+      </a>
+    </div>
+  </div>
+);
+
+const AdminLogin = ({
+  error,
+  onError,
+}: {
+  error: string;
+  onError: (message: string) => void;
+}) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const signIn = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase) return;
+
+    setSubmitting(true);
+    onError("");
+    const data = new FormData(event.currentTarget);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: String(data.get("email") ?? "").trim(),
+      password: String(data.get("password") ?? ""),
+    });
+    if (signInError) onError(signInError.message);
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa] p-5">
+      <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-7 shadow-sm sm:p-9">
+        <a href="/" className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-sm font-bold text-white">
+            Z.
+          </span>
+          <span>
+            <span className="block text-sm font-semibold text-slate-900">
+              Portfolio Studio
+            </span>
+            <span className="mt-0.5 block text-[11px] text-slate-500">
+              Secure administrator sign in
+            </span>
+          </span>
+        </a>
+        <div className="mt-8">
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+            Welcome back
+          </h1>
+          <p className="mt-1.5 text-sm text-slate-500">
+            Sign in with your provisioned admin account.
+          </p>
+        </div>
+        <form onSubmit={signIn} className="mt-6 grid gap-4">
+          <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+            Email address
+            <span className="relative">
+              <Mail
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                name="email"
+                type="email"
+                required
+                autoComplete="username"
+                placeholder="you@example.com"
+                className={`${inputClass} pl-9`}
+              />
+            </span>
+          </label>
+          <label className="grid gap-1.5 text-xs font-semibold text-slate-700">
+            Password
+            <span className="relative">
+              <LockKeyhole
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className={`${inputClass} pl-9`}
+              />
+            </span>
+          </label>
+          {error && (
+            <p role="alert" className="text-xs leading-5 text-red-600">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-wait disabled:opacity-60"
+          >
+            {submitting && <LoaderCircle size={16} className="animate-spin" />}
+            Sign in
+          </button>
+        </form>
+        <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">
+          Admin accounts are created and authorized in Supabase. Public sign-up
+          is disabled.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const AdminAccessDenied = ({
+  email,
+  error,
+  onSignOut,
+}: {
+  email: string;
+  error: string;
+  onSignOut: () => void;
+}) => (
+  <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa] p-5">
+    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
+        <LockKeyhole size={20} />
+      </span>
+      <h1 className="mt-5 text-lg font-semibold text-slate-900">
+        Admin access required
+      </h1>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        {error ||
+          `${email} is signed in but is not listed as an authorized portfolio admin.`}
+      </p>
+      <button
+        type="button"
+        onClick={onSignOut}
+        className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+      >
+        <LogOut size={14} /> Sign out
+      </button>
+    </div>
+  </div>
+);
 
 type SidebarLinkProps = {
   active: boolean;

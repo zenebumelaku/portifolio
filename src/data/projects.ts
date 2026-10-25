@@ -1,5 +1,5 @@
 import type { ProjectCardProps } from "@/sections/ProjectsSection/components/ProjectCard";
-import { supabase, supabaseConfigured } from "@/data/supabase";
+import { supabaseConfigured } from "@/data/supabase-config";
 
 export type PortfolioProject = ProjectCardProps & {
   id: string;
@@ -168,7 +168,9 @@ const fromRow = (row: ProjectRow): PortfolioProject | null => {
 };
 
 export const loadPublicProjects = async (): Promise<PortfolioProject[]> => {
-  if (!supabaseConfigured || !supabase) return defaultProjects;
+  if (!supabaseConfigured) return defaultProjects;
+  const { supabase } = await import("@/data/supabase");
+  if (!supabase) return defaultProjects;
 
   const { data, error } = await supabase
     .from("portfolio_projects")
@@ -187,6 +189,7 @@ export const loadPublicProjects = async (): Promise<PortfolioProject[]> => {
 };
 
 export const loadAdminProjects = async (): Promise<PortfolioProject[]> => {
+  const { supabase } = await import("@/data/supabase");
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const { data, error } = await supabase
@@ -208,6 +211,7 @@ export const savePortfolioProject = async (
   project: PortfolioProject,
   sortOrder: number,
 ) => {
+  const { supabase } = await import("@/data/supabase");
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const { id, published, ...content } = project;
@@ -222,6 +226,7 @@ export const savePortfolioProject = async (
 };
 
 export const deletePortfolioProject = async (id: string) => {
+  const { supabase } = await import("@/data/supabase");
   if (!supabase) throw new Error("Supabase is not configured.");
 
   const { error } = await supabase

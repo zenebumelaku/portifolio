@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navbar } from "@/sections/Navbar";
 import { HeroSection } from "@/sections/HeroSection";
 import { AboutSection } from "@/sections/AboutSection";
@@ -7,7 +7,12 @@ import { ProjectsSection } from "@/sections/ProjectsSection";
 import { ContactSection } from "@/sections/ContactSection";
 import { JourneySection } from "@/sections/JourneySection";
 import { Footer } from "@/sections/Footer";
-import { AdminDashboard } from "@/admin/AdminDashboard";
+
+const AdminDashboard = lazy(() =>
+  import("@/admin/AdminDashboard").then((module) => ({
+    default: module.AdminDashboard,
+  })),
+);
 
 const PortfolioSite = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -41,7 +46,15 @@ const PortfolioSite = () => {
 
 export const App = () =>
   window.location.pathname.startsWith("/admin") ? (
-    <AdminDashboard />
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa] text-sm text-slate-500">
+          Loading admin workspace…
+        </div>
+      }
+    >
+      <AdminDashboard />
+    </Suspense>
   ) : (
     <PortfolioSite />
   );
