@@ -1,11 +1,12 @@
 import type { ProjectCardProps } from "@/sections/ProjectsSection/components/ProjectCard";
+import { supabase, supabaseConfigured } from "@/data/supabase";
 
 export type PortfolioProject = ProjectCardProps & {
   id: string;
   published: boolean;
 };
 
-const defaultProjects: PortfolioProject[] = [
+export const defaultProjects: PortfolioProject[] = [
   {
     id: "zenebu-portfolio",
     published: true,
@@ -113,8 +114,6 @@ const defaultProjects: PortfolioProject[] = [
   },
 ];
 
-const storageKey = "zenebu-portfolio-projects";
-
 const isProject = (value: unknown): value is PortfolioProject => {
   if (typeof value !== "object" || value === null) return false;
 
@@ -146,33 +145,91 @@ const isProject = (value: unknown): value is PortfolioProject => {
   );
 };
 
-export const loadPortfolioProjects = (): {
-  projects: PortfolioProject[];
-  error?: string;
-} => {
-  try {
-    const saved = window.localStorage.getItem(storageKey);
-    if (saved === null) return { projects: defaultProjects };
-
-    const parsed: unknown = JSON.parse(saved);
-    if (!Array.isArray(parsed) || !parsed.every(isProject)) {
-      return {
-        projects: defaultProjects,
-        error: "Saved project data is invalid. Showing the original projects.",
-      };
-    }
-
-    return { projects: parsed };
-  } catch {
-    return {
-      projects: defaultProjects,
-      error: "Saved project data could not be read. Showing the original projects.",
-    };
-  }
+type ProjectRow = {
+  id: string;
+  published: boolean;
+  project: unknown;
+  sort_order: number;
 };
 
-export const savePortfolioProjects = (projects: PortfolioProject[]) => {
-  window.localStorage.setItem(storageKey, JSON.stringify(projects));
+const fromRow = (row: ProjectRow): PortfolioProject | null => {
+  if (
+    typeof row.id !== "string" ||
+    typeof row.published !== "boolean" ||
+    typeof row.sort_order !== "number" ||
+    typeof row.project !== "object" ||
+    row.project === null
+  ) {
+    return null;
+  }
+
+  const project = { ...row.project, id: row.id, published: row.published };
+  return isProject(project) ? project : null;
+};
+
+export const loadPublicProjects = async (): Promise<PortfolioProject[]> => {
+  if (!supabaseConfigured || !supabase) return defaultProjects;
+
+  const { data, error } = await supabase
+    .from("portfolio_projects")
+    .select("id, published, project, sort_order")
+    .eq("published", true)
+    .order("sort_order", { ascending: true });
+
+  if (error) throw error;
+
+  const projects = (data as ProjectRow[]).map(fromRow);
+  if (projects.some((project) => project === null)) {
+    throw new Error("A saved project has invalid data.");
+  }
+
+  return projects as PortfolioProject[];
+};
+
+export const loadAdminProjects = async (): Promise<PortfolioProject[]> => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { data, error } = await supabase
+    .from("portfolio_projects")
+    .select("id, published, project, sort_order")
+    .order("sort_order", { ascending: true });
+
+  if (error) throw error;
+
+  const projects = (data as ProjectRow[]).map(fromRow);
+  if (projects.some((project) => project === null)) {
+    throw new Error("A saved project has invalid data.");
+  }
+
+  return projects as PortfolioProject[];
+};
+
+export const savePortfolioProject = async (
+  project: PortfolioProject,
+  sortOrder: number,
+) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { id, published, ...content } = project;
+  const { error } = await supabase.from("portfolio_projects").upsert({
+    id,
+    published,
+    project: content,
+    sort_order: sortOrder,
+  });
+
+  if (error) throw error;
+};
+
+export const deletePortfolioProject = async (id: string) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  const { error } = await supabase
+    .from("portfolio_projects")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
 };
 
 export const createProjectId = () => {
