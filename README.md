@@ -1,6 +1,6 @@
 # Zeniva portfolio
 
-This project is a clean-room reconstruction of the source shown in the uploaded 33-page PDF.
+This project is a clean-room reconstruction of the source shown in the uploaded 33-page PDF..
 
 ## Source structure reproduced
 
@@ -76,3 +76,4 @@ the new admin workspace after the Vercel database has been initialized.
 ## Notes
 
 The original screenshots show project media loaded from generated assets. This reconstruction uses graceful placeholder media blocks so the project runs without requiring private/generated assets from the original environment.
+madeby zenebu melaku
