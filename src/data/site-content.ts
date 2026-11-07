@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { upload } from "@vercel/blob/client";
+import { apiFetch } from "@/data/api";
 
 export type PortfolioSiteContent = {
   hero: {
@@ -429,53 +431,24 @@ const readSiteContentRow = (data: unknown): PortfolioSiteContent => {
 };
 
 export const loadPublicPortfolioContent = async (): Promise<PortfolioSiteContent> => {
-  if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-    return defaultPortfolioSiteContent;
-  }
-
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) return defaultPortfolioSiteContent;
-
-  const { data, error } = await supabase
-    .from("portfolio_site_content")
-    .select("content")
-    .eq("id", "site")
-    .maybeSingle();
-
-  if (error) throw error;
-  return readSiteContentRow(data?.content ?? defaultPortfolioSiteContent);
+  const response = await apiFetch("/api/content");
+  return readSiteContentRow(await response.json());
 };
 
 export const loadAdminPortfolioContent = async (): Promise<PortfolioSiteContent> => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
-
-  const { data, error } = await supabase
-    .from("portfolio_site_content")
-    .select("content")
-    .eq("id", "site")
-    .maybeSingle();
-
-  if (error) throw error;
-  return readSiteContentRow(data?.content ?? defaultPortfolioSiteContent);
+  const response = await apiFetch("/api/content?admin=1");
+  return readSiteContentRow(await response.json());
 };
 
 export const savePortfolioContent = async (content: PortfolioSiteContent) => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
-
-  const { error } = await supabase.from("portfolio_site_content").upsert({
-    id: "site",
-    content,
+  await apiFetch("/api/content", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
   });
-
-  if (error) throw error;
 };
 
 export const uploadCertificationImage = async (file: File) => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
-
   const allowedTypes = [
     "image/jpeg",
     "image/png",
@@ -492,17 +465,11 @@ export const uploadCertificationImage = async (file: File) => {
 
   const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
   const objectPath = `certifications/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage
-    .from("portfolio-project-media")
-    .upload(objectPath, file, {
-      contentType: file.type,
-      cacheControl: "31536000",
-      upsert: false,
-    });
-
-  if (error) throw error;
-  return supabase.storage.from("portfolio-project-media").getPublicUrl(objectPath)
-    .data.publicUrl;
+  const blob = await upload(objectPath, file, {
+    access: "public",
+    handleUploadUrl: "/api/media",
+  });
+  return blob.url;
 };
 
 export const usePortfolioSiteContent = () => {

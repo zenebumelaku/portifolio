@@ -32,7 +32,7 @@ import {
   Trophy,
   X,
 } from "lucide-react";
-import type { Session } from "@supabase/supabase-js";
+import { apiFetch } from "@/data/api";
 import {
   createProjectId,
   deletePortfolioProject,
@@ -41,8 +41,6 @@ import {
   uploadProjectMedia,
   type PortfolioProject,
 } from "@/data/projects";
-import { supabase } from "@/data/supabase";
-import { supabaseConfigured } from "@/data/supabase-config";
 import {
   defaultPortfolioSiteContent,
   loadAdminPortfolioContent,
@@ -54,6 +52,7 @@ import {
 
 type AdminPage = "overview" | "projects" | "site-content";
 type ProjectDraft = Omit<PortfolioProject, "id"> & { id?: string };
+type AdminSession = { user: { email: string | null } };
 
 const blankProject: ProjectDraft = {
   mediaType: "placeholder",
@@ -82,11 +81,10 @@ const errorMessage = (error: unknown, fallback: string) => {
 };
 
 export const AdminDashboard = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const sessionUserId = useRef<string | null>(null);
+  const [session, setSession] = useState<AdminSession | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [checkingAccess, setCheckingAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminConfigured, setAdminConfigured] = useState(true);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [page, setPage] = useState<AdminPage>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -98,93 +96,39 @@ export const AdminDashboard = () => {
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    if (!supabase) {
-      setAuthLoading(false);
-      setProjectsLoading(false);
-      return;
-    }
-
-    supabase.auth
-      .getSession()
-      .then(({ data, error }) => {
-        if (error) setStorageError(error.message);
-        sessionUserId.current = data.session?.user.id ?? null;
-        setSession(data.session);
-        setAuthLoading(false);
+    let active = true;
+    apiFetch("/api/auth")
+      .then(async (response) => {
+        return (await response.json()) as {
+          configured: boolean;
+          authenticated: boolean;
+          email?: string;
+        };
+      })
+      .then((status) => {
+        if (!active) return;
+        setAdminConfigured(status.configured);
+        const nextSession = status.authenticated
+          ? { user: { email: status.email ?? null } }
+          : null;
+        setSession(nextSession);
+        setIsAdmin(Boolean(nextSession));
       })
       .catch((error: unknown) => {
+        if (!active) return;
         setStorageError(errorMessage(error, "Could not check your session."));
-        setAuthLoading(false);
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false);
       });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      const nextUserId = nextSession?.user.id ?? null;
-      const userChanged = sessionUserId.current !== nextUserId;
-      sessionUserId.current = nextUserId;
-      setSession(nextSession);
-      if (userChanged) {
-        setIsAdmin(false);
-        setProjects([]);
-        setPage("overview");
-        setEditor(null);
-        setProjectsLoading(Boolean(nextSession));
-        setStorageError("");
-      }
-      setAuthLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!supabase || !sessionUserId.current) {
-      setIsAdmin(false);
-      setCheckingAccess(false);
-      setProjectsLoading(false);
-      return;
-    }
-
-    const userId = sessionUserId.current;
-    let active = true;
-    setCheckingAccess(true);
-    supabase
-      .from("portfolio_admins")
-      .select("user_id")
-      .eq("user_id", userId)
-      .maybeSingle()
-      .then(
-        ({ data, error }) => {
-          if (!active) return;
-          if (error) {
-            setStorageError(`Could not verify admin access: ${error.message}`);
-            setIsAdmin(false);
-          } else {
-            setIsAdmin(Boolean(data));
-          }
-          setCheckingAccess(false);
-        },
-        (error: unknown) => {
-          if (!active) return;
-          setStorageError(
-            `Could not verify admin access: ${errorMessage(
-              error,
-              "Unknown error.",
-            )}`,
-          );
-          setIsAdmin(false);
-          setCheckingAccess(false);
-        },
-      );
 
     return () => {
       active = false;
     };
-  }, [session?.user.id]);
+  }, []);
 
   useEffect(() => {
-    if (!supabase || !isAdmin) return;
+    if (!isAdmin) return;
 
     let active = true;
     setProjectsLoading(true);
@@ -314,6 +258,20 @@ export const AdminDashboard = () => {
       });
   };
 
+  const signOut = async () => {
+    try {
+      await apiFetch("/api/auth", { method: "DELETE" });
+      setSession(null);
+      setIsAdmin(false);
+      setProjects([]);
+      setSiteContent(defaultPortfolioSiteContent);
+      setPage("overview");
+      setStorageError("");
+    } catch (error: unknown) {
+      setStorageError(errorMessage(error, "Could not sign out."));
+    }
+  };
+
   const navigate = (nextPage: AdminPage) => {
     setPage(nextPage);
     setEditor(null);
@@ -331,11 +289,11 @@ export const AdminDashboard = () => {
         ? "Site content"
         : "Projects";
 
-  if (!supabaseConfigured || !supabase) {
+  if (!adminConfigured && !authLoading) {
     return <AdminSetupNotice />;
   }
 
-  if (authLoading || checkingAccess || (session && isAdmin && projectsLoading)) {
+  if (authLoading || (session && isAdmin && projectsLoading)) {
     return <AdminLoading />;
   }
 
@@ -344,16 +302,13 @@ export const AdminDashboard = () => {
       <AdminLogin
         error={storageError}
         onError={setStorageError}
-      />
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <AdminAccessDenied
-        email={session.user.email ?? "Signed-in user"}
-        error={storageError}
-      onSignOut={() => void supabase?.auth.signOut()}
+        onSignedIn={(email) => {
+          const nextSession = { user: { email } };
+          setSession(nextSession);
+          setIsAdmin(true);
+          setProjectsLoading(true);
+          setStorageError("");
+        }}
       />
     );
   }
@@ -478,7 +433,7 @@ export const AdminDashboard = () => {
               type="button"
               title="Sign out"
               aria-label="Sign out"
-              onClick={() => void supabase?.auth.signOut()}
+              onClick={() => void signOut()}
               className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
             >
               <LogOut size={16} />
@@ -588,12 +543,12 @@ const AdminSetupNotice = () => (
         <Settings2 size={20} />
       </span>
       <h1 className="mt-5 text-xl font-semibold text-slate-900">
-        Connect your Supabase project
+        Configure your Vercel admin
       </h1>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Add <code>VITE_SUPABASE_URL</code> and{" "}
-        <code>VITE_SUPABASE_ANON_KEY</code> to your local environment and Vercel
-        project settings, then redeploy.
+        Set <code>ADMIN_EMAIL</code>, <code>ADMIN_PASSWORD</code>, and{" "}
+        <code>ADMIN_SESSION_SECRET</code> in your Vercel project settings. Add a
+        connected Postgres database and Blob store, then redeploy.
       </p>
       <a
         href="/"
@@ -608,25 +563,36 @@ const AdminSetupNotice = () => (
 const AdminLogin = ({
   error,
   onError,
+  onSignedIn,
 }: {
   error: string;
   onError: (message: string) => void;
+  onSignedIn: (email: string) => void;
 }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const signIn = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!supabase) return;
 
     setSubmitting(true);
     onError("");
     const data = new FormData(event.currentTarget);
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: String(data.get("email") ?? "").trim(),
-      password: String(data.get("password") ?? ""),
-    });
-    if (signInError) onError(signInError.message);
-    setSubmitting(false);
+    const email = String(data.get("email") ?? "").trim();
+    try {
+      const response = await apiFetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password: String(data.get("password") ?? ""),
+        }),
+      });
+      onSignedIn(email);
+    } catch (error: unknown) {
+      onError(errorMessage(error, "Could not sign in."));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -703,45 +669,12 @@ const AdminLogin = ({
           </button>
         </form>
         <p className="mt-5 text-center text-[11px] leading-5 text-slate-400">
-          Admin accounts are created and authorized in Supabase. Public sign-up
-          is disabled.
+          Only the administrator credentials configured in Vercel can sign in.
         </p>
       </div>
     </div>
   );
 };
-
-const AdminAccessDenied = ({
-  email,
-  error,
-  onSignOut,
-}: {
-  email: string;
-  error: string;
-  onSignOut: () => void;
-}) => (
-  <div className="flex min-h-screen items-center justify-center bg-[#f7f8fa] p-5">
-    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600">
-        <LockKeyhole size={20} />
-      </span>
-      <h1 className="mt-5 text-lg font-semibold text-slate-900">
-        Admin access required
-      </h1>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        {error ||
-          `${email} is signed in but is not listed as an authorized portfolio admin.`}
-      </p>
-      <button
-        type="button"
-        onClick={onSignOut}
-        className="mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-      >
-        <LogOut size={14} /> Sign out
-      </button>
-    </div>
-  </div>
-);
 
 type SidebarLinkProps = {
   active: boolean;

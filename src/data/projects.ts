@@ -1,5 +1,6 @@
 import type { ProjectCardProps } from "@/sections/ProjectsSection/components/ProjectCard";
-import { supabaseConfigured } from "@/data/supabase-config";
+import { upload } from "@vercel/blob/client";
+import { apiFetch } from "@/data/api";
 
 export type PortfolioProject = ProjectCardProps & {
   id: string;
@@ -168,19 +169,15 @@ const fromRow = (row: ProjectRow): PortfolioProject | null => {
 };
 
 export const loadPublicProjects = async (): Promise<PortfolioProject[]> => {
-  if (!supabaseConfigured) return defaultProjects;
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) return defaultProjects;
+  const response = await apiFetch("/api/projects");
+  if (
+    import.meta.env.DEV &&
+    !response.headers.get("content-type")?.includes("application/json")
+  ) {
+    return defaultProjects;
+  }
 
-  const { data, error } = await supabase
-    .from("portfolio_projects")
-    .select("id, published, project, sort_order")
-    .eq("published", true)
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
-
-  const projects = (data as ProjectRow[]).map(fromRow);
+  const projects = ((await response.json()) as ProjectRow[]).map(fromRow);
   if (projects.some((project) => project === null)) {
     throw new Error("A saved project has invalid data.");
   }
@@ -189,17 +186,9 @@ export const loadPublicProjects = async (): Promise<PortfolioProject[]> => {
 };
 
 export const loadAdminProjects = async (): Promise<PortfolioProject[]> => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
+  const response = await apiFetch("/api/projects?admin=1");
 
-  const { data, error } = await supabase
-    .from("portfolio_projects")
-    .select("id, published, project, sort_order")
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
-
-  const projects = (data as ProjectRow[]).map(fromRow);
+  const projects = ((await response.json()) as ProjectRow[]).map(fromRow);
   if (projects.some((project) => project === null)) {
     throw new Error("A saved project has invalid data.");
   }
@@ -211,24 +200,14 @@ export const savePortfolioProject = async (
   project: PortfolioProject,
   sortOrder: number,
 ) => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
-
-  const { id, published, ...content } = project;
-  const { error } = await supabase.from("portfolio_projects").upsert({
-    id,
-    published,
-    project: content,
-    sort_order: sortOrder,
+  await apiFetch("/api/projects", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project, sortOrder }),
   });
-
-  if (error) throw error;
 };
 
 export const uploadProjectMedia = async (file: File, projectId: string) => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
-
   const allowedTypes = [
     "image/jpeg",
     "image/png",
@@ -249,29 +228,17 @@ export const uploadProjectMedia = async (file: File, projectId: string) => {
   const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];
   const safeProjectId = projectId.replace(/[^a-zA-Z0-9_-]/g, "_");
   const objectPath = `${safeProjectId}/${crypto.randomUUID()}.${extension}`;
-  const { error } = await supabase.storage
-    .from("portfolio-project-media")
-    .upload(objectPath, file, {
-      contentType: file.type,
-      cacheControl: "31536000",
-      upsert: false,
-    });
-
-  if (error) throw error;
-  return supabase.storage.from("portfolio-project-media").getPublicUrl(objectPath)
-    .data.publicUrl;
+  const blob = await upload(`projects/${objectPath}`, file, {
+    access: "public",
+    handleUploadUrl: "/api/media",
+  });
+  return blob.url;
 };
 
 export const deletePortfolioProject = async (id: string) => {
-  const { supabase } = await import("@/data/supabase");
-  if (!supabase) throw new Error("Supabase is not configured.");
-
-  const { error } = await supabase
-    .from("portfolio_projects")
-    .delete()
-    .eq("id", id);
-
-  if (error) throw error;
+  await apiFetch(`/api/projects?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 };
 
 export const createProjectId = () => {
