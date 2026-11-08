@@ -203,7 +203,7 @@ export const defaultPortfolioSiteContent: PortfolioSiteContent = {
       },
       {
         title: "Telegram",
-        value: "@teninen",
+        value: "@zeni_mel",
         href: "https://t.me/teninen",
         iconLabel: "TG",
       },
@@ -213,12 +213,7 @@ export const defaultPortfolioSiteContent: PortfolioSiteContent = {
         href: "https://leetcode.com/zeni_mel",
         iconLabel: "LC",
       },
-      {
-        title: "Telegram channel",
-        value: "@zenicore",
-        href: "https://t.me/zenicore",
-        iconLabel: "X",
-      },
+      
     ],
     locationLabel: "Location",
     locationValue: "Addis Ababa, Ethiopia",

@@ -18,7 +18,7 @@ const sign = (payload: string, secret: string) =>
 const safeEqual = (left: string, right: string) => {
   const leftHash = createHmac("sha256", "compare").update(left).digest();
   const rightHash = createHmac("sha256", "compare").update(right).digest();
-  return timingSafeEqual(leftHash, rightHash);
+  return timingSafeEqual(new Uint8Array(leftHash), new Uint8Array(rightHash));
 };
 
 const readCookie = (request: VercelRequest, name: string) => {

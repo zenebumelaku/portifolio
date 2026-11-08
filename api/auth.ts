@@ -6,7 +6,7 @@ import {
   methodNotAllowed,
   requireSameOrigin,
   signInAdmin,
-} from "../server/auth";
+} from "../server/auth.js";
 
 export default function handler(request: VercelRequest, response: VercelResponse) {
   response.setHeader("Cache-Control", "no-store");

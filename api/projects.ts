@@ -4,8 +4,8 @@ import {
   methodNotAllowed,
   requireAdmin,
   requireSameOrigin,
-} from "../server/auth";
-import { getDatabase } from "../server/database";
+} from "../server/auth.js";
+import { getDatabase } from "../server/database.js";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);

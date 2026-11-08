@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getAdminSession } from "../server/auth";
+import { getAdminSession } from "../server/auth.js";
 
 const imageTypes = [
   "image/jpeg",
