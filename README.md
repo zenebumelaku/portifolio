@@ -1,6 +1,6 @@
 # Zeniva portfolio
 
-This project is a clean-room reconstruction of the source shown in the uploaded 33-page PDF..
+This project is a clean-room reconstruction of the source shown in the uploaded 33-page PDF.
 
 ## Source structure reproduced
 
@@ -36,44 +36,50 @@ npm run build
 
 ## Admin workspace
 
-The admin workspace lets you add, edit, publish/unpublish, search, and delete
-projects, and edit all supported portfolio site content. Changes are saved to
-Postgres and appear on the public portfolio without a code change or redeploy.
-Project and certification images/videos are stored in Vercel Blob.
+The admin uses Supabase for email/password authentication and shared project
+storage. Once configured, open `/admin` on the deployed site (for example,
+`https://your-domain.vercel.app/admin`) to add, edit, publish, unpublish, search,
+and delete projects. Published projects are shown to all portfolio visitors.
 
-### Vercel storage setup
+### Supabase setup
 
-1. In Vercel, add a Postgres database from the Storage/Marketplace integrations
-   (Neon is the supported Postgres provider). Connect it to this project and
-   make sure `POSTGRES_URL` is available in the target environment.
-2. Open the database SQL editor and run
-   [`db/migrations/001_portfolio.sql`](./db/migrations/001_portfolio.sql). This
-   creates the tables and seeds the portfolio's four starter projects. Site
-   content uses the built-in defaults until you save edits in the admin.
-3. Create and connect a **public Vercel Blob store** to the project. Set
-   `BLOB_READ_WRITE_TOKEN` for the deployment environment because the secure
-   browser-upload route uses it to issue short-lived upload tokens.
-4. In Vercel **Settings → Environment Variables**, set:
-   - `ADMIN_EMAIL`: the email used to sign in to `/admin`.
-   - `ADMIN_PASSWORD`: a long, unique admin password.
-   - `ADMIN_SESSION_SECRET`: a randomly generated secret with at least 32
-     random bytes (for example, generate one with `openssl rand -base64 32`).
-5. Redeploy, then open `https://your-domain.vercel.app/admin`.
+1. Create a Supabase project.
+2. In Supabase **SQL Editor**, run
+   [`supabase/migrations/202610250001_portfolio_admin.sql`](./supabase/migrations/202610250001_portfolio_admin.sql).
+   This creates the project and administrator tables, row-level security
+   policies, and seeds the current portfolio projects.
+3. In **Authentication → Users**, create your administrator user with the email
+   and password you want to use to sign in. Do not enable public sign-ups.
+4. Grant that user admin access by running this in SQL Editor, replacing the
+   email with the one you just created:
 
-The database URL and Blob write token are only used by server-side Vercel
-Functions; they are never included in the browser bundle. Admin sessions use a
-signed, HTTP-only cookie and expire after eight hours. Public API reads return
-published projects and portfolio site content only.
+   ```sql
+   insert into public.portfolio_admins (user_id)
+   select id from auth.users where email = 'you@example.com'
+   on conflict (user_id) do nothing;
+   ```
 
-For local development, `npm run dev` starts only Vite. Use `vercel dev` after
-linking the project and pulling its environment variables to run the API routes
-as well. Do not commit the downloaded environment file.
+5. Copy `.env.example` to `.env.local` for local development and set
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your Supabase project's
+   **Settings → API** page. These are public client configuration values; never
+   put a Supabase `service_role` key in the frontend or Vercel `VITE_` variables.
+6. Add the same two environment variables in your Vercel project's
+   **Settings → Environment Variables** for each environment you use, then
+   redeploy so Vite includes them in the build.
+7. Open `https://your-domain.vercel.app/admin` and sign in.
 
-Existing content saved in Supabase is not copied automatically. Export or copy
-any custom project/site-content edits before switching, then enter them through
-the new admin workspace after the Vercel database has been initialized.
+The admin and public portfolio are part of the same Vercel deployment. The
+included [`vercel.json`](./vercel.json) rewrite makes direct navigation to
+`/admin` load the React application. Admin access is enforced by Supabase Auth
+and the database row-level security policies; only user IDs explicitly present
+in `portfolio_admins` can create, update, or delete projects. Public visitors
+can read published projects only.
+
+If Supabase environment variables are not set, the public portfolio continues
+to show the built-in projects, while `/admin` displays a setup notice. The
+Supabase client uses only the public anon key; database access is restricted by
+the SQL policies.
 
 ## Notes
 
 The original screenshots show project media loaded from generated assets. This reconstruction uses graceful placeholder media blocks so the project runs without requiring private/generated assets from the original environment.
-madeby zenebu melaku

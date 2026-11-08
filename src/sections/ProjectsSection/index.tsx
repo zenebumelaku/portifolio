@@ -3,11 +3,14 @@ import { ProjectFilter } from "@/sections/ProjectsSection/components/ProjectFilt
 import { ProjectGrid } from "@/sections/ProjectsSection/components/ProjectGrid";
 import { motion } from "framer-motion";
 import { defaultProjects, loadPublicProjects, type PortfolioProject } from "@/data/projects";
+import { supabaseConfigured } from "@/data/supabase-config";
 
 export const ProjectsSection = () => {
   const [active, setActive] = useState("All");
-  const [projects, setProjects] = useState<PortfolioProject[]>(defaultProjects);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<PortfolioProject[]>(
+    supabaseConfigured ? [] : defaultProjects,
+  );
+  const [loading, setLoading] = useState(supabaseConfigured);
   const [error, setError] = useState("");
 
   useEffect(() => {
